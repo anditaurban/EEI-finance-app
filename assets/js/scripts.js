@@ -33,7 +33,7 @@ const scriptsToLoad = [
 ];
 
 if (!owner_id || !user_id || !level || !nama) {
-    window.location.href = 'login'; 
+    window.location.href = 'login.html'; 
 }
 
 
