@@ -1,8 +1,8 @@
 // === Konstanta API dan Token ===
 const app_id = 2;
 const token = 'DpacnJf3uEQeM7HN';
-const otpUrl = 'https://apieei.katib.cloud/login';
-const loginUrl = 'https://apieei.katib.cloud/otp/login';
+const otpUrl = 'https://devapieei.katib.cloud/login';
+const loginUrl = 'https://devapieei.katib.cloud/otp/login';
 const expiredTime = new Date().getTime() + 7 * 24 * 60 * 60 * 1000; // 7 hari
 
 
