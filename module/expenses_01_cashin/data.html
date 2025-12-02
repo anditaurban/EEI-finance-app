@@ -1,0 +1,83 @@
+<div class="bg-white p-6">
+  <section class="space-y-6">
+    <!-- Header -->
+    <div class="flex flex-wrap items-start justify-between gap-4">
+      <div>
+        <h1 id="formTitle" class="text-2xl font-bold mb-1">CASH INFLOW</h1>
+        <nav class="text-sm text-gray-500 flex items-center flex-wrap gap-1">
+          <span>Home</span>
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+          </svg>
+          <span>Expenses</span>
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+          </svg>
+          <span>Inflow</span>
+        </nav>
+      </div>
+    </div>
+
+<!-- Tab Navigation -->
+<div class="flex gap-2 border-b border-gray-300">
+  <button class="tab-link text-sm flex items-center gap-2 py-1 px-3 hover:bg-blue-100 rounded-t-md text-gray-600" onclick="loadModuleContent('expenses')">
+    📚 <span class="menu-text hidden md:inline">Ledger</span>
+  </button>
+  <button class="tab-link text-sm flex items-center gap-2 py-1 px-3 bg-blue-200 rounded-t-md text-blue-600 active-tab font-semibold" onclick="loadModuleContent('expenses_01_cashin')">
+    💰 <span class="menu-text hidden md:inline">Inflow</span>
+  </button>
+  <button class="tab-link text-sm flex items-center gap-2 py-1 px-3 hover:bg-blue-200 rounded-t-md text-gray-600" onclick="loadModuleContent('expenses_02_cashout')">
+    💸 <span class="menu-text hidden md:inline">Outflow</span>
+  </button>
+  <button class="tab-link text-sm flex items-center gap-2 py-1 px-3 hover:bg-blue-200 rounded-t-md text-gray-600" onclick="loadModuleContent('expenses_03_transfer')">
+    🔄 <span class="menu-text hidden md:inline">Transfer Bank</span>
+  </button>
+  <button class="tab-link text-sm flex items-center gap-2 py-1 px-3 hover:bg-blue-200 rounded-t-md text-gray-600" onclick="loadModuleContent('expenses_04_coa')">
+    📊 <span class="menu-text hidden md:inline">COA</span>
+  </button>
+</div>
+
+ 
+  
+
+<div class="mx-auto p-6 rounded-xl">
+  <table class="w-full text-left border-collapse">
+    <!-- Header -->
+    <thead>
+      <tr class="border-b border-gray-700">
+        <th class="p-2">Kategori</th>
+        <th class="p-2 text-center">Jan</th>
+        <th class="p-2 text-center">Feb</th>
+        <th class="p-2 text-center">Mar</th>
+        <th class="p-2 text-center">Apr</th>
+        <th class="p-2 text-center">May</th>
+        <th class="p-2 text-center">June</th>
+        <th class="p-2 text-center">July</th>
+        <th class="p-2 text-center">Ags</th>
+        <th class="p-2 text-center">Sept</th>
+        <th class="p-2 text-center">Oct</th>
+        <th class="p-2 text-center">Nov</th>
+        <th class="p-2 text-center">Dec</th>
+      </tr>
+    </thead>
+
+    <!-- Body -->
+    <tbody class="text-sm">
+      <!-- Biaya umum & adm -->
+      <tr class="bg-gray-800/50">
+        <td colspan="13" class="p-2 font-bold">Bank Account
+          <span class="ml-2 text-xs text-gray-900 font-normal">Tidak generate (hanya pencatatan)</span>
+        </td>
+      </tr>
+      <tr><td class="p-2">Mandiri</td><td colspan="12"></td></tr>
+      <tr><td class="p-2">BRI</td><td colspan="12"></td></tr>
+      <tr><td class="p-2">BNI</td><td colspan="12"></td></tr>
+      <tr><td class="p-2">CIMB</td><td colspan="12"></td></tr>
+
+    </tbody>
+  </table>
+</div>
+
+
+</section>
+</div>

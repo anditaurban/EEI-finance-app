@@ -1,0 +1,122 @@
+<div class="bg-white p-6">
+  <section class="section">
+
+    <!-- Header -->
+    <div class="flex flex-wrap items-start justify-between mb-6 gap-4">
+      <div>
+        <h1 id="formTitle" class="text-2xl font-bold mb-1">RECEIVABLE FORM</h1>
+        <nav class="text-gray-500 text-sm flex items-center flex-wrap gap-1">
+          <span>Home</span>
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+          </svg>
+          <span>Payable</span>
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+          </svg>
+          <span class="font-medium">Input</span>
+        </nav>
+      </div>
+
+      <div class="flex flex-wrap gap-2">
+        <button onclick="createData()" id="addButton" class="bg-blue-600 hover:bg-blue-700 text-white text-sm px-4 py-2 rounded">Simpan</button>
+        <button onclick="updateData()" id="updateButton" class="bg-yellow-600 hover:bg-yellow-700 text-white text-sm px-4 py-2 rounded">Update</button>
+        <button onclick="loadModuleContent('payable')" class="bg-gray-300 text-sm px-4 py-2 rounded">⬅️ Kembali</button>
+      </div>
+    </div>
+
+<div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+
+  <!-- Kolom Kiri: Project Information -->
+  <div>
+    <h2 class="text-blue-600 text-lg font-semibold mb-4">Project Information</h2>
+
+    <!-- Project -->
+    <div class="mb-4 flex items-center">
+      <label class="w-40 font-medium">Project <span class="text-red-500">*</span></label>
+      <div class="flex-1">
+        <input list="projectList" id="project" name="project" placeholder="Please type or select the project"
+          class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+        <datalist id="projectList">
+          <option value="Project A">
+          <option value="Project B">
+          <option value="Project C">
+        </datalist>
+      </div>
+    </div>
+    <!-- Purchase Order -->
+    <div class="mb-4 flex items-center">
+      <label class="w-40 font-medium">Purchase Order #</label>
+      <input type="text" id="po_number" name="po_number"
+        class="flex-1 border border-yellow-400 bg-yellow-50 rounded px-3 py-2" readonly>
+    </div>
+    <!-- Client -->
+    <div class="mb-4 flex items-center">
+      <label class="w-40 font-medium">Client</label>
+      <input type="text" id="client" name="client"
+        class="flex-1 border border-yellow-400 bg-yellow-50 rounded px-3 py-2" readonly>
+    </div>
+    <!-- Description -->
+    <div class="mb-4 flex items-start">
+      <label class="w-40 font-medium mt-2">Description <span class="text-red-500">*</span></label>
+      <textarea id="description" name="description" rows="2"
+        class="flex-1 border rounded px-3 py-2 focus:ring-2 focus:ring-blue-500"></textarea>
+    </div>
+  </div>
+
+  <!-- Kolom Kanan: Detail Receivable -->
+  <div>
+    <h2 class="text-blue-600 text-lg font-semibold mb-4">Detail Receivable</h2>
+    <!-- Invoice Date -->
+    <div class="mb-4 flex items-center">
+      <label class="w-40 font-medium">Invoice Date <span class="text-red-500">*</span></label>
+      <input type="date" id="invoice_date" name="invoice_date" class="flex-1 border rounded px-3 py-2">
+    </div>
+    <!-- Invoice Number -->
+    <div class="mb-4 flex items-center">
+      <label class="w-40 font-medium">Invoice Number</label>
+      <input type="text" id="invoice_number" name="invoice_number"
+        class="flex-1 border border-yellow-400 bg-yellow-50 rounded px-3 py-2" readonly>
+    </div>
+    <!-- Total Invoice -->
+    <div class="mb-4 flex items-center">
+      <label class="w-40 font-medium">Total Invoice</label>
+      <input type="text" id="total_invoice" name="total_invoice"
+        class="flex-1 border border-yellow-400 bg-yellow-50 rounded px-3 py-2 text-right" readonly>
+    </div>
+    <!-- Currency & Rate -->
+    <div class="mb-4 flex items-center space-x-2">
+      <label class="w-40 font-medium">Currency <span class="text-red-500">*</span></label>
+      <input type="text" id="currency" name="currency"
+        class="flex-1 border border-yellow-400 bg-yellow-50 rounded px-3 py-2" readonly>
+      <input type="number" id="rate" name="rate" placeholder="Rate"
+        class="w-24 border border-yellow-400 bg-yellow-50 rounded px-3 py-2 text-right" readonly/>
+    </div>
+    <!-- PPN -->
+    <div class="mb-4 flex items-center space-x-2">
+      <label class="w-40 font-medium">PPN (%)</label>
+      <input type="number" id="ppn_percent" name="ppn_percent"
+        class="w-24 border border-yellow-400 bg-yellow-50 rounded px-3 py-2" readonly>
+      <input type="text" id="ppn_nominal" name="ppn_nominal" placeholder="Amount"
+        class="flex-1 border border-yellow-400 bg-yellow-50 rounded px-3 py-2 text-right" readonly>
+    </div>
+    <!-- PPH -->
+    <div class="mb-4 flex items-center space-x-2">
+      <label class="w-40 font-medium">PPH (%)</label>
+      <input type="number" id="pph_percent" name="pph_percent"
+        class="w-24 border border-yellow-400 bg-yellow-50 rounded px-3 py-2" readonly>
+      <input type="text" id="pph_nominal" name="pph_nominal" placeholder="Amount"
+        class="flex-1 border border-yellow-400 bg-yellow-50 rounded px-3 py-2 text-right" readonly>
+    </div>
+    <!-- Total Amount After Tax -->
+    <div class="mb-4 flex items-center border-t pt-4">
+      <label class="w-40 font-semibold text-blue-600">Total Amount</label>
+      <input type="text" id="total_after_tax" name="total_after_tax"
+        class="flex-1 border border-yellow-400 bg-yellow-50 rounded px-3 py-2 text-right font-semibold text-blue-600" readonly>
+    </div>
+  </div>
+</div>
+
+
+  </section>
+</div>
