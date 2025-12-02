@@ -1,7 +1,6 @@
 <div class="bg-white p-6">
   <section class="section">
 
-    <!-- Header -->
     <div class="flex flex-wrap items-start justify-between mb-6 gap-4">
       <div>
         <h1 id="formTitle" class="text-2xl font-bold mb-1">RECEIVABLE FORM</h1>
@@ -23,6 +22,16 @@
           class="bg-blue-600 hover:bg-blue-700 text-white text-sm px-4 py-2 rounded">Simpan</button>
         <button onclick="updateData()" id="updateButton"
           class="bg-yellow-600 hover:bg-yellow-700 text-white text-sm px-4 py-2 rounded">Update</button>
+
+        <button onclick="printInvoice('pdf')"
+          class="hidden bg-red-600 hover:bg-red-700 text-white text-sm px-4 py-2 rounded flex items-center gap-1">
+          <i class="fas fa-file-pdf"></i> PDF
+        </button>
+        <button onclick="printInvoice('word')"
+          class="hidden bg-blue-800 hover:bg-blue-900 text-white text-sm px-4 py-2 rounded flex items-center gap-1">
+          <i class="fas fa-file-word"></i> Word
+        </button>
+
         <button onclick="loadModuleContent('receivable')" class="bg-gray-300 text-sm px-4 py-2 rounded">⬅️
           Kembali</button>
       </div>
@@ -39,7 +48,9 @@
             <input type="text" id="projectInput" name="projectInput"
               class="flex-1 border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
               placeholder="Ketik nama project..." autocomplete="off" />
+
             <input type="hidden" id="project_id" name="project_id">
+            <input type="hidden" id="pelanggan_id" name="pelanggan_id">
           </div>
           <ul id="projectSuggestions"
             class="absolute z-10 bg-white border border-gray-300 w-full md:w-[calc(100%-10rem)] right-0 mt-1 rounded shadow-lg max-h-60 overflow-y-auto hidden">
@@ -61,7 +72,7 @@
         <div class="mb-4 flex items-center">
           <label class="w-40 font-medium">Project Amount</label>
           <input type="text" id="project_amount" name="project_amount"
-            class="flex-1 border border-yellow-400 bg-yellow-50 rounded px-3 py-2 text-right" readonly>
+            class="flex-1 border border-yellow-400 bg-yellow-50 rounded px-3 py-2 text-right font-bold" readonly>
         </div>
 
         <div class="mb-4 flex items-center">
@@ -73,7 +84,7 @@
         <div class="mb-4 flex items-start">
           <label class="w-40 font-medium mt-2">Description <span class="text-red-500">*</span></label>
           <textarea id="description" name="description" rows="2"
-            class="flex-1 border rounded px-3 py-2 focus:ring-2 focus:ring-blue-500"></textarea>
+            class="flex-1 border border-gray-300 rounded px-3 py-2 focus:ring-2 focus:ring-blue-500"></textarea>
         </div>
       </div>
 
@@ -105,14 +116,18 @@
         </div>
 
         <div class="mb-4 flex items-center space-x-2">
-          <label class="w-40 font-medium">Currency <span class="text-red-500">*</span></label>
+          <label class="w-40 font-medium">Currency & Rate <span class="text-red-500">*</span></label>
 
-          <input type="text" id="rate" name="rate" placeholder="Rate" value="1"
-            class="w-24 border border-gray-300 rounded px-3 py-2 text-right focus:ring-2 focus:ring-blue-500"
+          <select id="currency" name="currency"
+            class="w-24 border border-gray-300 rounded px-3 py-2 focus:ring-2 focus:ring-blue-500 bg-white"
+            onchange="checkCurrency()">
+            <option value="IDR">IDR</option>
+            <option value="USD">USD</option>
+          </select>
+
+          <input type="text" id="rate" name="rate" placeholder="Kurs (Ex: 16.000)" value="1"
+            class="flex-1 border border-gray-300 rounded px-3 py-2 text-right focus:ring-2 focus:ring-blue-500"
             onkeyup="formatNumber(this)" />
-
-          <input type="text" id="currency" name="currency" placeholder="IDR / USD"
-            class="flex-1 border border-yellow-400 bg-yellow-50 rounded px-3 py-2 text-right" readonly>
         </div>
 
         <div class="mb-4 flex items-center space-x-2">
@@ -121,10 +136,11 @@
 
           <input type="number" id="percent_invoice" name="percent_invoice" placeholder="%"
             class="w-24 border border-gray-300 rounded px-3 py-2 text-right focus:ring-2 focus:ring-blue-500"
-            oninput="calculateNominal()" />
+            onkeyup="calculateByPercent()" />
 
           <input type="text" id="total_invoice" name="total_invoice" placeholder="Amount"
-            class="flex-1 border border-gray-300 rounded px-3 py-2 text-right bg-gray-50" readonly>
+            class="flex-1 border border-gray-300 rounded px-3 py-2 text-right focus:ring-2 focus:ring-blue-500"
+            onkeyup="calculateByAmount()" />
         </div>
 
         <div class="mb-4 flex items-center space-x-2">
@@ -152,7 +168,6 @@
         </div>
       </div>
     </div>
-
 
   </section>
 </div>
