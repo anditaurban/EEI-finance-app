@@ -3,7 +3,7 @@
  */
 pagemodule = "Receiveable";
 colSpanCount = 9;
-setDataType("account/receivable");
+setDataType("account_receivable");
 
 // --- INISIALISASI HALAMAN ---
 if (window.detail_id && window.detail_desc) {
@@ -316,10 +316,42 @@ async function updateData() {
   await submitData("PUT", detail_id);
 }
 
+// === FUNGSI HELPER MATA UANG (Tambahkan ini agar error hilang) ===
+function autoSetRate(input) {
+  // Pastikan input tidak null sebelum mengambil value
+  if (!input) return;
+
+  const val = input.value.toUpperCase();
+  const rateInput = document.getElementById("rate");
+
+  if (val === "IDR") {
+    // Jika IDR, Rate dikunci jadi 1
+    rateInput.value = "1";
+    rateInput.setAttribute("readonly", true);
+    rateInput.classList.add("bg-gray-100");
+  } else {
+    // Jika Asing, buka kunci rate
+    // Hanya kosongkan jika isinya masih default "1"
+    if (rateInput.value == "1") rateInput.value = "";
+
+    rateInput.removeAttribute("readonly");
+    rateInput.classList.remove("bg-gray-100");
+  }
+
+  // Hitung ulang konversi (jika nominal sudah terisi)
+  if (typeof calculateKonversi === "function") {
+    calculateKonversi();
+  }
+}
+
+/**
+ * 4. LOAD DETAIL (Untuk Mode Edit)
+ */
 async function loadDetail(Id, Detail) {
   document.getElementById("formTitle").innerText = "EDIT RECEIVABLE";
   window.detail_id = Id;
   window.detail_desc = Detail;
+
   try {
     const res = await fetch(
       `${baseUrl}/detail/${currentDataType}/${Id}?_=${Date.now()}`,
@@ -327,45 +359,89 @@ async function loadDetail(Id, Detail) {
         headers: { Authorization: `Bearer ${API_TOKEN}` },
       }
     );
-    const { detail } = await res.json();
+    const result = await res.json();
 
+    // Jaga-jaga jika response dibungkus dalam object 'detail' atau langsung root
+    const detail = result.detail || result;
+
+    console.log("Loaded Data:", detail);
+
+    // --- MAPPING INFO PROJECT ---
     document.getElementById("projectInput").value = detail.project_name || "";
     document.getElementById("project_id").value = detail.project_id || "";
-    document.getElementById("pelanggan_id").value = detail.pelanggan_id || "";
+    // Jika project_number tidak ada di JSON detail, biarkan kosong atau handle khusus
     document.getElementById("project_number").value =
       detail.project_number || "";
     document.getElementById("po_number").value = detail.po_number || "";
-    document.getElementById("project_amount").value = finance(
-      detail.contract_amount
-    );
-    document.getElementById("description").value = detail.description || "";
 
-    // Load Client di Edit Mode
+    // Client: Ambil dari key 'client' (sesuai JSON kamu)
     document.getElementById("client").value =
       detail.client || detail.pelanggan_nama || "";
 
+    // Project Amount (Cek key contract_amount atau project_amount)
+    let amount = detail.contract_amount || detail.project_amount || 0;
+    document.getElementById("project_amount").value = finance(amount);
+
+    document.getElementById("description").value = detail.description || "";
+
+    // --- MAPPING TANGGAL & NO INV ---
     document.getElementById("invoice_date").value = detail.inv_date || "";
     document.getElementById("due_date").value = detail.due_date || "";
     document.getElementById("payment_date").value = detail.payment_date || "";
     document.getElementById("invoice_number").value = detail.inv_number || "";
 
-    document.getElementById("currency").value = detail.currency || "IDR";
-    let dbRate = detail.rate ? parseFloat(detail.rate) : 1;
+    // --- MAPPING KEUANGAN (FIXED LOGIC) ---
+
+    // 1. Currency
+    let curr = detail.currency || "IDR";
+    document.getElementById("currency").value = curr;
+
+    // 2. Rate (Handle jika di DB nilainya 0)
+    let dbRate = parseFloat(detail.rate) || 0;
+
+    // Jika IDR tapi rate di DB 0, kita paksa jadi 1 agar perhitungan benar
+    if (curr === "IDR" && dbRate === 0) {
+      dbRate = 1;
+    }
     document.getElementById("rate").value = finance(dbRate);
 
-    let dbNominal = detail.nominal ? parseFloat(detail.nominal) : 0;
-    if (dbNominal === 0 && detail.total_inv > 0) {
-      dbNominal = parseFloat(detail.total_inv) / dbRate;
+    // 3. Nominal & Total Inv
+    let dbTotalInv = parseFloat(detail.total_inv) || 0;
+    let dbNominal = parseFloat(detail.nominal) || 0;
+
+    // LOGIKA RECOVERY NOMINAL:
+    // Jika Nominal di DB 0 (seperti di JSON kamu), kita hitung mundur dari Total Inv
+    if (dbNominal === 0 && dbTotalInv > 0) {
+      if (curr === "IDR") {
+        dbNominal = dbTotalInv; // Kalau IDR, Nominal = Total
+      } else {
+        dbNominal = dbTotalInv / dbRate; // Kalau Asing, Total / Rate
+      }
     }
+
+    // Set nilai ke input
     document.getElementById("nominal").value = finance(dbNominal);
+    document.getElementById("total_invoice").value = finance(dbTotalInv);
 
-    autoSetRate(document.getElementById("currency"));
-    calculateKonversi(); // Trigger hitung ulang & pajak
+    // 4. Pajak
+    document.getElementById("ppn_percent").value = detail.ppn_percent || "11"; // Default 11 jika null
+    document.getElementById("ppn_nominal").value = finance(detail.ppn_nominal);
 
-    document.getElementById("ppn_percent").value = detail.ppn_percent || "11";
     document.getElementById("pph_percent").value = detail.pph_percent || "0";
-    calculateTax();
+    document.getElementById("pph_nominal").value = finance(detail.pph_nominal);
+
+    document.getElementById("total_after_tax").value = finance(
+      detail.total_inv_tax
+    );
+
+    // --- FINALISASI UI ---
+    // Panggil autoSetRate untuk mengunci/membuka field Rate sesuai Currency
+    autoSetRate(document.getElementById("currency"));
+
+    // Trigger hitung ulang visual (persentase dll)
+    calculateKonversi();
   } catch (err) {
-    console.error(err);
+    console.error("Gagal load detail:", err);
+    Swal.fire("Error", "Gagal mengambil data detail.", "error");
   }
 }
