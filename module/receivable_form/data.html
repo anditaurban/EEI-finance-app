@@ -115,19 +115,39 @@
             placeholder="Auto-generated...">
         </div>
 
-        <div class="mb-4 flex items-center space-x-2">
-          <label class="w-40 font-medium">Currency & Rate <span class="text-red-500">*</span></label>
+        <div class="flex flex-wrap gap-4 mb-4">
+          <div class="w-24">
+            <label class="block font-medium text-sm mb-1">Currency</label>
+            <input type="text" id="currency" name="currency" placeholder="IDR/USD"
+              class="w-full border border-gray-300 rounded px-3 py-2 focus:ring-2 focus:ring-blue-500 uppercase"
+              oninput="this.value = this.value.toUpperCase()" />
+          </div>
 
-          <select id="currency" name="currency"
-            class="w-24 border border-gray-300 rounded px-3 py-2 focus:ring-2 focus:ring-blue-500 bg-white"
-            onchange="checkCurrency()">
-            <option value="IDR">IDR</option>
-            <option value="USD">USD</option>
-          </select>
+          <div class="flex-1">
+            <label class="block font-medium text-sm mb-1">Rate</label>
+            <input type="text" id="rate" name="rate" placeholder="Kurs (1 jika IDR)" value="1"
+              class="w-full border border-gray-300 rounded px-3 py-2 text-right focus:ring-2 focus:ring-blue-500"
+              onkeyup="formatNumber(this); calculateKonversi()" />
+          </div>
 
-          <input type="text" id="rate" name="rate" placeholder="Kurs (Ex: 16.000)" value="1"
-            class="flex-1 border border-gray-300 rounded px-3 py-2 text-right focus:ring-2 focus:ring-blue-500"
-            onkeyup="formatNumber(this)" />
+          <div class="flex-1">
+            <label class="block font-medium text-sm mb-1">Nominal (Original)</label>
+            <input type="text" id="nominal" name="nominal" placeholder="Input Nominal Asli..."
+              class="w-full border border-gray-300 rounded px-3 py-2 text-right focus:ring-2 focus:ring-blue-500 font-bold text-gray-700"
+              onkeyup="formatNumber(this); calculateKonversi()" />
+          </div>
+        </div>
+
+        <div class="mb-4 flex items-center space-x-2 bg-gray-50 p-3 rounded border border-gray-200">
+          <label class="w-40 font-medium">Total Converted <br><span class="text-xs text-gray-500">(To System
+              Currency)</span></label>
+
+          <input type="number" id="percent_invoice" placeholder="%"
+            class="w-16 border border-gray-300 rounded px-2 py-2 text-right bg-white" readonly />
+
+          <input type="text" id="total_invoice" name="total_inv" placeholder="Hasil Rupiah"
+            class="flex-1 border border-yellow-400 bg-yellow-50 rounded px-3 py-2 text-right font-bold text-lg"
+            readonly />
         </div>
 
         <div class="mb-4 flex items-center space-x-2">
