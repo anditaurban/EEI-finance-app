@@ -118,9 +118,20 @@
         <div class="flex flex-wrap gap-4 mb-4">
           <div class="w-24">
             <label class="block font-medium text-sm mb-1">Currency</label>
-            <input type="text" id="currency" name="currency" placeholder="IDR/USD"
-              class="w-full border border-gray-300 rounded px-3 py-2 focus:ring-2 focus:ring-blue-500 uppercase"
-              oninput="this.value = this.value.toUpperCase()" />
+            <select id="currency" name="currency"
+              class="w-full border border-gray-300 rounded px-3 py-2 focus:ring-2 focus:ring-blue-500"
+              onchange="autoSetRate(this)">
+              <option value="IDR" selected>IDR</option>
+              <option value="USD">USD</option>
+              <option value="EUR">EUR</option>
+              <option value="SGD">SGD</option>
+              <option value="JPY">JPY</option>
+              <option value="CNY">CNY</option>
+              <option value="GBP">GBP</option>
+              <option value="AUD">AUD</option>
+              <option value="MYR">MYR</option>
+              <option value="THB">THB</option>
+            </select>
           </div>
 
           <div class="flex-1">

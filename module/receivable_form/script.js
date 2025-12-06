@@ -316,8 +316,93 @@ async function updateData() {
   await submitData("PUT", detail_id);
 }
 
-// === FUNGSI HELPER MATA UANG (Tambahkan ini agar error hilang) ===
-function autoSetRate(input) {
+// === FUNGSI HELPER MATA UANG ===
+// Fallback exchange rates to IDR (used if API fails)
+let currencyRates = {
+  IDR: 1,
+  USD: 16689,
+  EUR: 19418,
+  SGD: 12879,
+  JPY: 107,
+  CNY: 2360,
+  GBP: 22258,
+  AUD: 11079,
+  MYR: 4059,
+  THB: 522
+};
+
+// List of supported currencies
+const supportedCurrencies = ['USD', 'EUR', 'SGD', 'JPY', 'CNY', 'GBP', 'AUD', 'MYR', 'THB'];
+
+// Flag to track if live rates are loaded
+let liveRatesLoaded = false;
+
+// Fetch single currency rate from Hexarate API
+async function fetchRateFromHexarate(currency) {
+  try {
+    const response = await fetch(`https://hexarate.paikama.co/api/rates/latest/${currency}?target=IDR`);
+    const data = await response.json();
+    
+    if (data.status_code === 200 && data.data && data.data.mid) {
+      // The API returns the rate from currency to IDR
+      return Math.round(data.data.mid);
+    }
+  } catch (error) {
+    console.warn(`Failed to fetch rate for ${currency}:`, error.message);
+  }
+  return null;
+}
+
+// Fetch all currency rates from Hexarate API
+async function fetchLiveCurrencyRates() {
+  try {
+    console.log('Fetching live currency rates from Hexarate...');
+    
+    // Fetch all rates in parallel
+    const ratePromises = supportedCurrencies.map(async (currency) => {
+      const rate = await fetchRateFromHexarate(currency);
+      return { currency, rate };
+    });
+    
+    const results = await Promise.all(ratePromises);
+    
+    // Update rates for successful fetches
+    let successCount = 0;
+    results.forEach(({ currency, rate }) => {
+      if (rate !== null) {
+        currencyRates[currency] = rate;
+        successCount++;
+      }
+    });
+    
+    if (successCount > 0) {
+      liveRatesLoaded = true;
+      console.log(`Live currency rates loaded: ${successCount}/${supportedCurrencies.length} currencies`);
+      console.log('Current rates:', currencyRates);
+      return true;
+    }
+  } catch (error) {
+    console.warn('Failed to fetch live rates, using fallback rates:', error.message);
+  }
+  return false;
+}
+
+// Fetch single rate on demand (for faster response)
+async function fetchSingleRate(currency) {
+  if (currency === 'IDR') return 1;
+  
+  const rate = await fetchRateFromHexarate(currency);
+  if (rate !== null) {
+    currencyRates[currency] = rate;
+    return rate;
+  }
+  return currencyRates[currency] || 1;
+}
+
+// Initialize live rates on page load
+fetchLiveCurrencyRates();
+
+async function autoSetRate(input) {
   // Pastikan input tidak null sebelum mengambil value
   if (!input) return;
 
@@ -330,17 +415,39 @@ function autoSetRate(input) {
     rateInput.setAttribute("readonly", true);
     rateInput.classList.add("bg-gray-100");
   } else {
-    // Jika Asing, buka kunci rate
-    // Hanya kosongkan jika isinya masih default "1"
-    if (rateInput.value == "1") rateInput.value = "";
-
+    // Show loading indicator
+    rateInput.value = "Loading...";
+    rateInput.classList.add("bg-gray-100");
+    
+    // Fetch fresh rate for selected currency
+    const rate = await fetchSingleRate(val);
+    rateInput.value = finance(rate);
+    
+    // Buka kunci rate agar bisa diedit manual jika perlu
     rateInput.removeAttribute("readonly");
     rateInput.classList.remove("bg-gray-100");
+    
+    console.log(`📊 Rate for ${val}: ${rate} IDR`);
   }
 
   // Hitung ulang konversi (jika nominal sudah terisi)
   if (typeof calculateKonversi === "function") {
     calculateKonversi();
+  }
+}
+
+// Function to manually refresh rates
+async function refreshCurrencyRates() {
+  const success = await fetchLiveCurrencyRates();
+  if (success) {
+    Swal.fire('Success', 'Currency rates updated from Hexarate!', 'success');
+    // Re-apply current currency rate
+    const currencyInput = document.getElementById("currency");
+    if (currencyInput && currencyInput.value !== 'IDR') {
+      autoSetRate(currencyInput);
+    }
+  } else {
+    Swal.fire('Warning', 'Failed to fetch live rates. Using cached rates.', 'warning');
   }
 }
 
