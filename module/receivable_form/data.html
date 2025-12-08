@@ -177,17 +177,19 @@
         <div class="mb-4 flex items-center space-x-2">
           <label class="w-40 font-medium">PPN</label>
           <input type="number" id="ppn_percent" name="ppn_percent" placeholder="%" value="11"
-            class="w-24 border border-gray-300 rounded px-3 py-2 text-right" oninput="calculateTax()">
+            class="w-24 border border-gray-300 rounded px-3 py-2 text-right" oninput="calculateTaxFromPercent()">
           <input type="text" id="ppn_nominal" name="ppn_nominal" placeholder="Amount"
-            class="flex-1 border border-yellow-400 bg-yellow-50 rounded px-3 py-2 text-right" readonly>
+            class="flex-1 border border-gray-300 rounded px-3 py-2 text-right focus:ring-2 focus:ring-blue-500"
+            onkeyup="formatNumber(this); calculateTaxFromPPN()">
         </div>
 
         <div class="mb-4 flex items-center space-x-2">
           <label class="w-40 font-medium">PPH</label>
-          <input type="number" id="pph_percent" name="pph_percent" placeholder="%" value="0"
-            class="w-24 border border-gray-300 rounded px-3 py-2 text-right" oninput="calculateTax()">
+          <input type="number" id="pph_percent" name="pph_percent" placeholder="%" value="22"
+            class="w-24 border border-gray-300 rounded px-3 py-2 text-right" oninput="calculateTaxFromPercent()">
           <input type="text" id="pph_nominal" name="pph_nominal" placeholder="Amount"
-            class="flex-1 border border-yellow-400 bg-yellow-50 rounded px-3 py-2 text-right" readonly>
+            class="flex-1 border border-gray-300 rounded px-3 py-2 text-right focus:ring-2 focus:ring-blue-500"
+            onkeyup="formatNumber(this); calculateTaxFromPPH()">
         </div>
 
         <div class="mb-4 flex items-center border-t pt-4">
