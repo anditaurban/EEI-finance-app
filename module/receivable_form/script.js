@@ -24,7 +24,7 @@ if (window.detail_id && window.detail_desc) {
   setupProjectSearch();
 }
 
-// B. Hitung: Nominal * Rate = Total Inv
+// B. Hitung: Nominal * Rate = Total Converted, lalu set Total Invoice
 function calculateKonversi() {
   // Ambil input (bersihkan titik ribuan dulu)
   let nominal = unfinance(document.getElementById("nominal").value);
@@ -33,24 +33,28 @@ function calculateKonversi() {
   // Default rate = 1
   if (!rate || rate === 0) rate = 1;
 
-  // Hitung Total Rupiah
+  // Hitung Total Rupiah (Converted)
   let totalIDR = nominal * rate;
 
-  // Tampilkan ke kolom Total Invoice
-  document.getElementById("total_invoice").value = finance(totalIDR);
+  // Tampilkan ke kolom Total Converted
+  document.getElementById("total_converted").value = finance(totalIDR);
 
-  // Hitung Persentase Progress (Opsional, hanya visual)
+  // Hitung Persentase Progress untuk Total Converted
   const projectAmount = unfinance(
     document.getElementById("project_amount").value
   );
   if (projectAmount > 0) {
     const percent = (totalIDR / projectAmount) * 100;
-    document.getElementById("percent_invoice").value = percent
+    document.getElementById("percent_converted").value = percent
       .toFixed(2)
       .replace(/\.00$/, "");
   } else {
-    document.getElementById("percent_invoice").value = "0";
+    document.getElementById("percent_converted").value = "0";
   }
+
+  // Auto-set Total Invoice (Excl. Tax) sama dengan Total Converted
+  document.getElementById("total_invoice").value = finance(totalIDR);
+  document.getElementById("percent_invoice").value = document.getElementById("percent_converted").value;
 
   // PENTING: Langsung trigger hitung pajak!
   calculateTax();
@@ -251,6 +255,7 @@ function getDataPayload() {
     currency: getVal("currency"),
     rate: unfinance(getVal("rate")),
     nominal: unfinance(getVal("nominal")),
+    total_converted: unfinance(getVal("total_converted")),
     total_inv: unfinance(getVal("total_invoice")),
 
     ppn_percent: getVal("ppn_percent"),
@@ -528,6 +533,7 @@ async function loadDetail(Id, Detail) {
 
     // Set nilai ke input
     document.getElementById("nominal").value = finance(dbNominal);
+    document.getElementById("total_converted").value = finance(dbTotalInv);
     document.getElementById("total_invoice").value = finance(dbTotalInv);
 
     // 4. Pajak
