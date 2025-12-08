@@ -153,10 +153,10 @@
           <label class="w-40 font-medium">Total Converted <br><span class="text-xs text-gray-500">(To System
               Currency)</span></label>
 
-          <input type="number" id="percent_invoice" placeholder="%"
+          <input type="number" id="percent_converted" placeholder="%"
             class="w-16 border border-gray-300 rounded px-2 py-2 text-right bg-white" readonly />
 
-          <input type="text" id="total_invoice" name="total_inv" placeholder="Hasil Rupiah"
+          <input type="text" id="total_converted" name="total_converted" placeholder="Hasil Rupiah"
             class="flex-1 border border-yellow-400 bg-yellow-50 rounded px-3 py-2 text-right font-bold text-lg"
             readonly />
         </div>
@@ -170,8 +170,8 @@
             onkeyup="calculateByPercent()" />
 
           <input type="text" id="total_invoice" name="total_invoice" placeholder="Amount"
-            class="flex-1 border border-gray-300 rounded px-3 py-2 text-right focus:ring-2 focus:ring-blue-500"
-            onkeyup="calculateByAmount()" />
+            class="flex-1 border border-yellow-400 bg-yellow-50 rounded px-3 py-2 text-right font-bold"
+            readonly />
         </div>
 
         <div class="mb-4 flex items-center space-x-2">
