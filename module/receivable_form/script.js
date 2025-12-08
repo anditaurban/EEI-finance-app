@@ -60,28 +60,70 @@ function calculateKonversi() {
   calculateTax();
 }
 
-// C. Hitung Pajak (PPN & PPH)
-function calculateTax() {
-  // Ambil Total Invoice (yang sudah dihitung calculateKonversi)
+// C. Hitung Pajak (PPN & PPH) - dari persentase ke nominal
+function calculateTaxFromPercent() {
   const totalInv = unfinance(document.getElementById("total_invoice").value);
 
   // Ambil Persen Pajak
-  const ppnPercent =
-    parseFloat(document.getElementById("ppn_percent").value) || 0;
-  const pphPercent =
-    parseFloat(document.getElementById("pph_percent").value) || 0;
+  const ppnPercent = parseFloat(document.getElementById("ppn_percent").value) || 0;
+  const pphPercent = parseFloat(document.getElementById("pph_percent").value) || 0;
 
-  // Hitung Nominal
+  // Hitung Nominal dari Persen
   const ppnNominal = totalInv * (ppnPercent / 100);
   const pphNominal = totalInv * (pphPercent / 100);
 
-  // Total Akhir
-  const totalAfterTax = totalInv + ppnNominal - pphNominal;
-
-  // Render ke Input
+  // Update Nominal fields
   document.getElementById("ppn_nominal").value = finance(ppnNominal);
   document.getElementById("pph_nominal").value = finance(pphNominal);
+
+  // Update Total After Tax
+  updateTotalAfterTax();
+}
+
+// Hitung dari PPN Nominal ke Persen
+function calculateTaxFromPPN() {
+  const totalInv = unfinance(document.getElementById("total_invoice").value);
+  const ppnNominal = unfinance(document.getElementById("ppn_nominal").value);
+
+  // Hitung persen dari nominal
+  if (totalInv > 0) {
+    const ppnPercent = (ppnNominal / totalInv) * 100;
+    document.getElementById("ppn_percent").value = ppnPercent.toFixed(2).replace(/\.00$/, "");
+  }
+
+  // Update Total After Tax
+  updateTotalAfterTax();
+}
+
+// Hitung dari PPH Nominal ke Persen
+function calculateTaxFromPPH() {
+  const totalInv = unfinance(document.getElementById("total_invoice").value);
+  const pphNominal = unfinance(document.getElementById("pph_nominal").value);
+
+  // Hitung persen dari nominal
+  if (totalInv > 0) {
+    const pphPercent = (pphNominal / totalInv) * 100;
+    document.getElementById("pph_percent").value = pphPercent.toFixed(2).replace(/\.00$/, "");
+  }
+
+  // Update Total After Tax
+  updateTotalAfterTax();
+}
+
+// Update Total After Tax (dipanggil oleh semua fungsi pajak)
+function updateTotalAfterTax() {
+  const totalInv = unfinance(document.getElementById("total_invoice").value);
+  const ppnNominal = unfinance(document.getElementById("ppn_nominal").value);
+  const pphNominal = unfinance(document.getElementById("pph_nominal").value);
+
+  // Total Akhir = Total Invoice + PPN - PPH
+  const totalAfterTax = totalInv + ppnNominal - pphNominal;
   document.getElementById("total_after_tax").value = finance(totalAfterTax);
+}
+
+// Alias untuk backward compatibility
+function calculateTax() {
+  calculateTaxFromPercent();
 }
 
 /**
@@ -463,6 +505,7 @@ async function loadDetail(Id, Detail) {
   document.getElementById("formTitle").innerText = "EDIT RECEIVABLE";
   window.detail_id = Id;
   window.detail_desc = Detail;
+  console.log("Loading detail for ID:", Id);
 
   try {
     const res = await fetch(
@@ -540,7 +583,7 @@ async function loadDetail(Id, Detail) {
     document.getElementById("ppn_percent").value = detail.ppn_percent || "11"; // Default 11 jika null
     document.getElementById("ppn_nominal").value = finance(detail.ppn_nominal);
 
-    document.getElementById("pph_percent").value = detail.pph_percent || "0";
+    document.getElementById("pph_percent").value = detail.pph_percent || "22";
     document.getElementById("pph_nominal").value = finance(detail.pph_nominal);
 
     document.getElementById("total_after_tax").value = finance(
