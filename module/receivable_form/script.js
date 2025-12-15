@@ -6,23 +6,54 @@ colSpanCount = 9;
 setDataType("account_receivable");
 
 // --- INISIALISASI HALAMAN ---
-if (window.detail_id && window.detail_desc) {
-  // Mode Update
-  console.log("Mode: Update");
-  loadDetail(detail_id, detail_desc);
-  document.getElementById("addButton").classList.add("hidden");
-  document.getElementById("updateButton").classList.remove("hidden");
+// Debug: Log current state
+console.log("========== RECEIVABLE FORM INIT ==========");
+console.log("window.detail_id:", window.detail_id);
+console.log("window.detail_desc:", window.detail_desc);
+console.log("Type of detail_id:", typeof window.detail_id);
 
-  // Kunci search project saat edit
-  const pInput = document.getElementById("projectInput");
-  pInput.readOnly = true;
-  pInput.classList.add("bg-gray-100");
-} else {
-  // Mode Create
-  console.log("Mode: Create");
-  document.getElementById("updateButton").classList.add("hidden");
-  setupProjectSearch();
-}
+// Determine mode based on detail_id existence (use var to avoid redeclaration error)
+var isEditMode = !!(window.detail_id && window.detail_id !== "null" && window.detail_id !== "undefined");
+console.log("isEditMode:", isEditMode);
+
+(function initializeFormMode() {
+  const addButton = document.getElementById("addButton");
+  const updateButton = document.getElementById("updateButton");
+  const projectInput = document.getElementById("projectInput");
+  
+  if (isEditMode) {
+    // Mode Update
+    console.log("[MODE] UPDATE - Loading detail for ID:", window.detail_id);
+    
+    addButton.classList.add("hidden");
+    updateButton.classList.remove("hidden");
+    
+    // Lock project search in edit mode
+    projectInput.readOnly = true;
+    projectInput.classList.add("bg-gray-100");
+    
+    // Load the detail data
+    loadDetail(window.detail_id, window.detail_desc);
+  } else {
+    // Mode Create
+    console.log("[MODE] CREATE - Fresh form");
+    
+    addButton.classList.remove("hidden");
+    updateButton.classList.add("hidden");
+    
+    // Unlock project search in create mode
+    projectInput.readOnly = false;
+    projectInput.classList.remove("bg-gray-100");
+    
+    // Setup project search
+    setupProjectSearch();
+    
+    // Reset form title
+    document.getElementById("formTitle").innerText = "RECEIVABLE FORM";
+  }
+  
+  console.log("==========================================");
+})();
 
 // B. Hitung: Nominal * Rate = Total Converted, lalu set Total Invoice
 function calculateKonversi() {
@@ -365,7 +396,7 @@ async function updateData() {
 
 // === FUNGSI HELPER MATA UANG ===
 // Fallback exchange rates to IDR (used if API fails)
-let currencyRates = {
+var currencyRates = {
   IDR: 1,
   USD: 16689,
   EUR: 19418,
@@ -379,10 +410,10 @@ let currencyRates = {
 };
 
 // List of supported currencies
-const supportedCurrencies = ['USD', 'EUR', 'SGD', 'JPY', 'CNY', 'GBP', 'AUD', 'MYR', 'THB'];
+var supportedCurrencies = ['USD', 'EUR', 'SGD', 'JPY', 'CNY', 'GBP', 'AUD', 'MYR', 'THB'];
 
 // Flag to track if live rates are loaded
-let liveRatesLoaded = false;
+var liveRatesLoaded = false;
 
 // Fetch single currency rate from Hexarate API
 async function fetchRateFromHexarate(currency) {
