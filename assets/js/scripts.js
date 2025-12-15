@@ -151,6 +151,16 @@ function loadModuleContent(module, Id, Detail, Detail2) {
   // showLoading();
   setActiveMenu(module);
   currentDataSearch = "";
+  
+  // IMPORTANT: always clear/set window variables before loading module
+  // this prevents mode locking between create/edit
+  window.detail_id = Id || null;
+  window.detail_desc = Detail || null;
+  window.detail2_desc = Detail2 || null;
+  
+  console.log(`[loadModuleContent] Loading module: ${module}`);
+  console.log(`[loadModuleContent] detail_id: ${window.detail_id}, detail_desc: ${window.detail_desc}`);
+  
   fetch(`./module/${module}/data.html?v=${new Date().getTime()}`)
     .then((response) => {
       if (!response.ok) {
@@ -160,12 +170,6 @@ function loadModuleContent(module, Id, Detail, Detail2) {
     })
     .then((data) => {
       document.getElementById("content").innerHTML = data;
-
-      if (data.trim() !== "") {
-        window.detail_id = Id;
-        window.detail_desc = Detail;
-        window.detail2_desc = Detail2;
-      }
 
       if (currentScript) {
         document.body.removeChild(currentScript);
