@@ -175,21 +175,25 @@
         </div>
 
         <div class="mb-4 flex items-center space-x-2">
-          <label class="w-40 font-medium">PPN</label>
+          <label class="w-40 font-medium flex items-center gap-2">
+            <input type="checkbox" id="ppn_enabled" onchange="toggleTaxField('ppn')" class="w-4 h-4 accent-blue-600">
+            <span>PPN</span>
+          </label>
           <input type="number" id="ppn_percent" name="ppn_percent" placeholder="%" value="11"
-            class="w-24 border border-gray-300 rounded px-3 py-2 text-right" oninput="calculateTaxFromPercent()">
-          <input type="text" id="ppn_nominal" name="ppn_nominal" placeholder="Amount"
-            class="flex-1 border border-gray-300 rounded px-3 py-2 text-right focus:ring-2 focus:ring-blue-500"
-            onkeyup="formatNumber(this); calculateTaxFromPPN()">
+            class="w-24 border border-gray-300 rounded px-3 py-2 text-right bg-gray-100" oninput="calculateTaxFromPercent()" disabled>
+          <input type="text" id="ppn_nominal" name="ppn_nominal" placeholder="Amount" value="0"
+            class="flex-1 border border-gray-300 rounded px-3 py-2 text-right bg-gray-100" readonly>
         </div>
 
         <div class="mb-4 flex items-center space-x-2">
-          <label class="w-40 font-medium">PPH</label>
+          <label class="w-40 font-medium flex items-center gap-2">
+            <input type="checkbox" id="pph_enabled" onchange="toggleTaxField('pph')" class="w-4 h-4 accent-blue-600">
+            <span>PPH</span>
+          </label>
           <input type="number" id="pph_percent" name="pph_percent" placeholder="%" value="22"
-            class="w-24 border border-gray-300 rounded px-3 py-2 text-right" oninput="calculateTaxFromPercent()">
-          <input type="text" id="pph_nominal" name="pph_nominal" placeholder="Amount"
-            class="flex-1 border border-gray-300 rounded px-3 py-2 text-right focus:ring-2 focus:ring-blue-500"
-            onkeyup="formatNumber(this); calculateTaxFromPPH()">
+            class="w-24 border border-gray-300 rounded px-3 py-2 text-right bg-gray-100" oninput="calculateTaxFromPercent()" disabled>
+          <input type="text" id="pph_nominal" name="pph_nominal" placeholder="Amount" value="0"
+            class="flex-1 border border-gray-300 rounded px-3 py-2 text-right bg-gray-100" readonly>
         </div>
 
         <div class="mb-4 flex items-center border-t pt-4">
