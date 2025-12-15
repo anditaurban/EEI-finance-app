@@ -125,9 +125,13 @@ function calculateTaxFromPercent() {
   const ppnPercent = parseFloat(document.getElementById("ppn_percent").value) || 0;
   const pphPercent = parseFloat(document.getElementById("pph_percent").value) || 0;
 
-  // hitung nominal dari persen
-  const ppnNominal = totalInv * (ppnPercent / 100);
-  const pphNominal = totalInv * (pphPercent / 100);
+  // cek status checkbox
+  const ppnEnabled = document.getElementById("ppn_enabled")?.checked;
+  const pphEnabled = document.getElementById("pph_enabled")?.checked;
+
+  // hitung nominal dari persen (hanya jika enabled)
+  const ppnNominal = ppnEnabled ? totalInv * (ppnPercent / 100) : 0;
+  const pphNominal = pphEnabled ? totalInv * (pphPercent / 100) : 0;
 
   // update nominal fields
   document.getElementById("ppn_nominal").value = finance(ppnNominal);
@@ -181,6 +185,30 @@ function updateTotalAfterTax() {
 // alias untuk backward compatibility
 function calculateTax() {
   calculateTaxFromPercent();
+}
+
+// toggle aktif/nonaktif field pajak berdasarkan checkbox
+function toggleTaxField(taxType) {
+  const checkbox = document.getElementById(`${taxType}_enabled`);
+  const percentInput = document.getElementById(`${taxType}_percent`);
+  const nominalInput = document.getElementById(`${taxType}_nominal`);
+  
+  if (checkbox.checked) {
+    // aktifkan field
+    percentInput.disabled = false;
+    percentInput.classList.remove("bg-gray-100");
+    
+    // hitung nominal dari persen
+    calculateTaxFromPercent();
+  } else {
+    // nonaktifkan field dan reset ke 0
+    percentInput.disabled = true;
+    percentInput.classList.add("bg-gray-100");
+    nominalInput.value = "0";
+    
+    // update total after tax
+    updateTotalAfterTax();
+  }
 }
 
 /**
@@ -594,11 +622,30 @@ async function loadDetail(Id, Detail) {
     document.getElementById("total_converted").value = finance(dbTotalInv);
     document.getElementById("total_invoice").value = finance(dbTotalInv);
 
-    // pajak
-    document.getElementById("ppn_percent").value = detail.ppn_percent || "11";
-    document.getElementById("ppn_nominal").value = finance(detail.ppn_nominal);
-    document.getElementById("pph_percent").value = detail.pph_percent || "22";
-    document.getElementById("pph_nominal").value = finance(detail.pph_nominal);
+    // pajak - set checkbox state berdasarkan nilai
+    const ppnPercent = parseFloat(detail.ppn_percent) || 0;
+    const pphPercent = parseFloat(detail.pph_percent) || 0;
+    const ppnNominal = parseFloat(detail.ppn_nominal) || 0;
+    const pphNominal = parseFloat(detail.pph_nominal) || 0;
+    
+    // set checkbox ppn jika ada nilai
+    if (ppnPercent > 0 || ppnNominal > 0) {
+      document.getElementById("ppn_enabled").checked = true;
+      document.getElementById("ppn_percent").disabled = false;
+      document.getElementById("ppn_percent").classList.remove("bg-gray-100");
+    }
+    document.getElementById("ppn_percent").value = ppnPercent || "11";
+    document.getElementById("ppn_nominal").value = finance(ppnNominal);
+    
+    // set checkbox pph jika ada nilai
+    if (pphPercent > 0 || pphNominal > 0) {
+      document.getElementById("pph_enabled").checked = true;
+      document.getElementById("pph_percent").disabled = false;
+      document.getElementById("pph_percent").classList.remove("bg-gray-100");
+    }
+    document.getElementById("pph_percent").value = pphPercent || "22";
+    document.getElementById("pph_nominal").value = finance(pphNominal);
+    
     document.getElementById("total_after_tax").value = finance(detail.total_inv_tax);
 
     // finalisasi ui
