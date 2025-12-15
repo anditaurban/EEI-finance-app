@@ -165,13 +165,13 @@
           <label class="w-40 font-medium">Total Invoice <br><span class="text-xs text-gray-500">(Excl.
               Tax)</span></label>
 
-          <input type="number" id="percent_invoice" name="percent_invoice" placeholder="%"
+          <input type="text" id="percent_invoice" name="percent_invoice" placeholder="%"
             class="w-24 border border-gray-300 rounded px-3 py-2 text-right focus:ring-2 focus:ring-blue-500"
-            onkeyup="calculateByPercent()" />
+            onkeyup="calculateInvoiceFromPercent()" />
 
           <input type="text" id="total_invoice" name="total_invoice" placeholder="Amount"
-            class="flex-1 border border-yellow-400 bg-yellow-50 rounded px-3 py-2 text-right font-bold"
-            readonly />
+            class="flex-1 border border-gray-300 rounded px-3 py-2 text-right font-bold focus:ring-2 focus:ring-blue-500"
+            onkeyup="formatNumber(this); calculateInvoiceFromAmount()" />
         </div>
 
         <div class="mb-4 flex items-center space-x-2">
