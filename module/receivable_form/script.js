@@ -363,11 +363,17 @@ function getDataPayload() {
     return el ? el.value.trim() : "";
   };
 
+  // cek status checkbox pajak
+  const ppnEnabled = document.getElementById("ppn_enabled")?.checked;
+  const pphEnabled = document.getElementById("pph_enabled")?.checked;
+
   const payload = {
     owner_id,
     user_id,
     project_id: getVal("project_id"),
     pelanggan_id: getVal("pelanggan_id"),
+    project_number: getVal("project_number"),
+    client: getVal("client"),
     po_number: getVal("po_number"),
     inv_number: getVal("invoice_number"),
     inv_date: getVal("invoice_date"),
@@ -380,10 +386,11 @@ function getDataPayload() {
     total_converted: unfinance(getVal("total_converted")),
     total_inv: unfinance(getVal("total_invoice")),
 
-    ppn_percent: getVal("ppn_percent"),
-    ppn_nominal: unfinance(getVal("ppn_nominal")),
-    pph_percent: getVal("pph_percent"),
-    pph_nominal: unfinance(getVal("pph_nominal")),
+    // kirim 0 jika checkbox tidak dicentang
+    ppn_percent: ppnEnabled ? getVal("ppn_percent") : "0",
+    ppn_nominal: ppnEnabled ? unfinance(getVal("ppn_nominal")) : 0,
+    pph_percent: pphEnabled ? getVal("pph_percent") : "0",
+    pph_nominal: pphEnabled ? unfinance(getVal("pph_nominal")) : 0,
     total_inv_tax: unfinance(getVal("total_after_tax")),
 
     description: getVal("description"),
@@ -411,6 +418,12 @@ async function submitData(method, id = "") {
     id ? "/" + id : ""
   }`;
 
+  // debug: log payload sebelum kirim
+  console.log("=== DEBUG PAYLOAD ===");
+  console.log("URL:", url);
+  console.log("Method:", method);
+  console.log("Payload:", JSON.stringify(payload, null, 2));
+
   try {
     const response = await fetch(url, {
       method: method,
@@ -420,7 +433,19 @@ async function submitData(method, id = "") {
       },
       body: JSON.stringify(payload),
     });
-    const result = await response.json();
+    
+    // debug: log response
+    const responseText = await response.text();
+    console.log("Response Status:", response.status);
+    console.log("Response Body:", responseText);
+    
+    let result;
+    try {
+      result = JSON.parse(responseText);
+    } catch (e) {
+      throw new Error(`Server error: ${responseText}`);
+    }
+    
     if (result.status === "success" || (result.data && result.data.id)) {
       Swal.fire(
         "Berhasil",
@@ -579,12 +604,15 @@ async function loadDetail(Id, Detail) {
     const result = await res.json();
     const detail = result.detail || result;
 
+    console.log("Detail data:", detail);
+
     // mapping info project
     document.getElementById("projectInput").value = detail.project_name || "";
     document.getElementById("project_id").value = detail.project_id || "";
-    document.getElementById("project_number").value = detail.project_number || "";
+    document.getElementById("pelanggan_id").value = detail.pelanggan_id || "";
+    document.getElementById("project_number").value = detail.project_number || detail.nomor_project || "";
     document.getElementById("po_number").value = detail.po_number || "";
-    document.getElementById("client").value = detail.client || detail.pelanggan_nama || "";
+    document.getElementById("client").value = detail.client || detail.pelanggan_nama || detail.customer_name || "";
 
     let amount = detail.contract_amount || detail.project_amount || 0;
     document.getElementById("project_amount").value = finance(amount);
@@ -628,29 +656,54 @@ async function loadDetail(Id, Detail) {
     const ppnNominal = parseFloat(detail.ppn_nominal) || 0;
     const pphNominal = parseFloat(detail.pph_nominal) || 0;
     
+    // reset checkbox dulu
+    const ppnCheckbox = document.getElementById("ppn_enabled");
+    const pphCheckbox = document.getElementById("pph_enabled");
+    const ppnPercentInput = document.getElementById("ppn_percent");
+    const pphPercentInput = document.getElementById("pph_percent");
+    
     // set checkbox ppn jika ada nilai
     if (ppnPercent > 0 || ppnNominal > 0) {
-      document.getElementById("ppn_enabled").checked = true;
-      document.getElementById("ppn_percent").disabled = false;
-      document.getElementById("ppn_percent").classList.remove("bg-gray-100");
+      ppnCheckbox.checked = true;
+      ppnPercentInput.disabled = false;
+      ppnPercentInput.classList.remove("bg-gray-100");
+    } else {
+      ppnCheckbox.checked = false;
+      ppnPercentInput.disabled = true;
+      ppnPercentInput.classList.add("bg-gray-100");
     }
-    document.getElementById("ppn_percent").value = ppnPercent || "11";
+    ppnPercentInput.value = ppnPercent || 11;
     document.getElementById("ppn_nominal").value = finance(ppnNominal);
     
     // set checkbox pph jika ada nilai
     if (pphPercent > 0 || pphNominal > 0) {
-      document.getElementById("pph_enabled").checked = true;
-      document.getElementById("pph_percent").disabled = false;
-      document.getElementById("pph_percent").classList.remove("bg-gray-100");
+      pphCheckbox.checked = true;
+      pphPercentInput.disabled = false;
+      pphPercentInput.classList.remove("bg-gray-100");
+    } else {
+      pphCheckbox.checked = false;
+      pphPercentInput.disabled = true;
+      pphPercentInput.classList.add("bg-gray-100");
     }
-    document.getElementById("pph_percent").value = pphPercent || "22";
+    pphPercentInput.value = pphPercent || 2;
     document.getElementById("pph_nominal").value = finance(pphNominal);
     
     document.getElementById("total_after_tax").value = finance(detail.total_inv_tax);
 
-    // finalisasi ui
-    autoSetRate(document.getElementById("currency"));
-    calculateKonversi();
+    // finalisasi ui - jangan panggil autoSetRate karena akan override rate dari db
+    if (curr !== "IDR") {
+      const rateInput = document.getElementById("rate");
+      rateInput.removeAttribute("readonly");
+      rateInput.classList.remove("bg-gray-100");
+    }
+    
+    // hitung ulang persentase saja tanpa mengubah nilai
+    const projectAmount = unfinance(document.getElementById("project_amount").value);
+    if (projectAmount > 0) {
+      const percentConverted = (dbTotalInv / projectAmount) * 100;
+      document.getElementById("percent_converted").value = percentConverted.toFixed(2).replace(/\.00$/, "");
+      document.getElementById("percent_invoice").value = percentConverted.toFixed(2).replace(/\.00$/, "");
+    }
   } catch (err) {
     console.error("Gagal load detail:", err);
     Swal.fire("Error", "Gagal mengambil data detail.", "error");
