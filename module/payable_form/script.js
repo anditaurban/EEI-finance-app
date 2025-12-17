@@ -1,378 +1,536 @@
-pagemodule = 'Payable'
+/**
+ * konfigurasi halaman
+ */
+pagemodule = "Payable";
 colSpanCount = 9;
-setDataType('account/payable');
+setDataType("account_payable");
 
-if (window.detail_id && window.detail_desc) {
-  // Mode update
-  loadDetail(detail_id, detail_desc);
-  document.getElementById('addButton').classList.add('hidden');
-}else {
-  // Mode tambah
-  document.getElementById('updateButton').classList.add('hidden');
-  // loadDropdown('formCategory', `${baseUrl}/list/product_category/${owner_id}`, 'category_id', 'category');
-  // loadDropdown('formUnit', `${baseUrl}/list/product_unit/${owner_id}`, 'unit_id', 'unit');
-  // loadDropdown('formStatus', `${baseUrl}/list/product_status/${owner_id}`, 'status_id', 'status');
-  loadKategoriOptions();
+// --- inisialisasi halaman ---
+var isEditMode = !!(window.detail_id && window.detail_id !== "null" && window.detail_id !== "undefined");
+
+(function initializeFormMode() {
+  const addButton = document.getElementById("addButton");
+  const updateButton = document.getElementById("updateButton");
+  const projectInput = document.getElementById("projectInput");
   
-  formattedToday = today.getFullYear() + '-' +
-  String(today.getMonth() + 1).padStart(2, '0') + '-' +
-  String(today.getDate()).padStart(2, '0');
-  console.log(formattedToday);
-  document.getElementById('formJoin').value = formattedToday;
+  if (isEditMode) {
+    // mode update
+    addButton.classList.add("hidden");
+    updateButton.classList.remove("hidden");
+    
+    // kunci search project saat edit
+    projectInput.readOnly = true;
+    projectInput.classList.add("bg-gray-100");
+    
+    // load data detail
+    loadDetail(window.detail_id, window.detail_desc);
+  } else {
+    // mode create
+    addButton.classList.remove("hidden");
+    updateButton.classList.add("hidden");
+    
+    // unlock project search di mode create
+    projectInput.readOnly = false;
+    projectInput.classList.remove("bg-gray-100");
+    
+    // setup project search
+    setupProjectSearch();
+    
+    // reset form title
+    document.getElementById("formTitle").innerText = "PAYABLE FORM";
+  }
+})();
+
+// hitung: nominal * rate = total converted, lalu set total invoice
+function calculateKonversi() {
+  let nominal = unfinance(document.getElementById("nominal").value);
+  let rate = unfinance(document.getElementById("rate").value);
+
+  if (!rate || rate === 0) rate = 1;
+
+  let totalIDR = nominal * rate;
+
+  document.getElementById("total_converted").value = finance(totalIDR);
+
+  const projectAmount = unfinance(document.getElementById("project_amount").value);
+  if (projectAmount > 0) {
+    const percent = (totalIDR / projectAmount) * 100;
+    document.getElementById("percent_converted").value = percent.toFixed(2).replace(/\.00$/, "");
+  } else {
+    document.getElementById("percent_converted").value = "0";
+  }
+
+  const currentTotalInvoice = unfinance(document.getElementById("total_invoice").value);
+  
+  if (currentTotalInvoice === 0 || !document.getElementById("total_invoice").dataset.manualEdit) {
+    document.getElementById("total_invoice").value = finance(totalIDR);
+    document.getElementById("percent_invoice").value = document.getElementById("percent_converted").value;
+  }
+
+  calculateTax();
 }
 
-function switchTab(tabId) {
-  // Hide all tab contents
-  document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+// hitung total invoice dari persentase
+function calculateInvoiceFromPercent() {
+  const projectAmount = unfinance(document.getElementById("project_amount").value);
+  const percentInvoice = parseFloat(document.getElementById("percent_invoice").value) || 0;
 
-  // Remove active styling
-  document.querySelectorAll('.tab-link').forEach(btn => {
-    btn.classList.remove('bg-blue-100', 'text-blue-600', 'font-semibold');
-    btn.classList.add('text-gray-600');
+  if (projectAmount > 0) {
+    const totalInvoice = projectAmount * (percentInvoice / 100);
+    document.getElementById("total_invoice").value = finance(totalInvoice);
+    document.getElementById("total_invoice").dataset.manualEdit = "true";
+  }
+
+  calculateTax();
+}
+
+// hitung persentase dari total invoice
+function calculateInvoiceFromAmount() {
+  const projectAmount = unfinance(document.getElementById("project_amount").value);
+  const totalInvoice = unfinance(document.getElementById("total_invoice").value);
+
+  if (projectAmount > 0) {
+    const percentInvoice = (totalInvoice / projectAmount) * 100;
+    document.getElementById("percent_invoice").value = percentInvoice.toFixed(2).replace(/\.00$/, "");
+  } else {
+    document.getElementById("percent_invoice").value = "0";
+  }
+  
+  document.getElementById("total_invoice").dataset.manualEdit = "true";
+  calculateTax();
+}
+
+// hitung pajak dari persentase ke nominal
+function calculateTaxFromPercent() {
+  const totalInv = unfinance(document.getElementById("total_invoice").value);
+
+  const ppnPercent = parseFloat(document.getElementById("ppn_percent").value) || 0;
+  const pphPercent = parseFloat(document.getElementById("pph_percent").value) || 0;
+
+  const ppnEnabled = document.getElementById("ppn_enabled")?.checked;
+  const pphEnabled = document.getElementById("pph_enabled")?.checked;
+
+  const ppnNominal = ppnEnabled ? totalInv * (ppnPercent / 100) : 0;
+  const pphNominal = pphEnabled ? totalInv * (pphPercent / 100) : 0;
+
+  document.getElementById("ppn_nominal").value = finance(ppnNominal);
+  document.getElementById("pph_nominal").value = finance(pphNominal);
+
+  updateTotalAfterTax();
+}
+
+// update total after tax
+function updateTotalAfterTax() {
+  const totalInv = unfinance(document.getElementById("total_invoice").value);
+  const ppnNominal = unfinance(document.getElementById("ppn_nominal").value);
+  const pphNominal = unfinance(document.getElementById("pph_nominal").value);
+
+  const totalAfterTax = totalInv + ppnNominal + pphNominal;
+  document.getElementById("total_after_tax").value = finance(totalAfterTax);
+}
+
+// alias
+function calculateTax() {
+  calculateTaxFromPercent();
+}
+
+// toggle field pajak
+function toggleTaxField(taxType) {
+  const checkbox = document.getElementById(`${taxType}_enabled`);
+  const percentInput = document.getElementById(`${taxType}_percent`);
+  const nominalInput = document.getElementById(`${taxType}_nominal`);
+  
+  if (checkbox.checked) {
+    percentInput.disabled = false;
+    percentInput.classList.remove("bg-gray-100");
+    calculateTaxFromPercent();
+  } else {
+    percentInput.disabled = true;
+    percentInput.classList.add("bg-gray-100");
+    nominalInput.value = "0";
+    updateTotalAfterTax();
+  }
+}
+
+/**
+ * search project & fill data
+ */
+function setupProjectSearch() {
+  const input = document.getElementById("projectInput");
+  const suggestionsBox = document.getElementById("projectSuggestions");
+  let searchTimeout;
+
+  input.addEventListener("input", function () {
+    const query = this.value;
+    clearTimeout(searchTimeout);
+
+    if (query.length < 2) {
+      suggestionsBox.classList.add("hidden");
+      return;
+    }
+
+    searchTimeout = setTimeout(async () => {
+      try {
+        const url = `${baseUrl}/table/project_won/${owner_id}/1?search=${encodeURIComponent(query)}`;
+        const response = await fetch(url, {
+          headers: { Authorization: `Bearer ${API_TOKEN}` },
+        });
+        const result = await response.json();
+        const projects = result.tableData || [];
+
+        suggestionsBox.innerHTML = "";
+        if (projects.length > 0) {
+          suggestionsBox.classList.remove("hidden");
+          projects.forEach((proj) => {
+            const li = document.createElement("li");
+            li.className = "px-4 py-2 hover:bg-blue-100 cursor-pointer border-b text-sm";
+            li.innerHTML = `
+              <div class="font-bold text-gray-800">${proj.project_name}</div>
+              <div class="text-xs text-gray-500">${proj.pelanggan_nama || "-"} | No: ${proj.project_number || "-"}</div>
+            `;
+            li.onclick = () => selectProject(proj);
+            suggestionsBox.appendChild(li);
+          });
+        } else {
+          suggestionsBox.classList.add("hidden");
+        }
+      } catch (error) {
+        console.error(error);
+      }
+    }, 400);
   });
 
-  // Show selected tab
-  document.getElementById(`tab-${tabId}`).classList.remove('hidden');
-
-  // Set active tab link
-  document.querySelector(`.tab-link[data-tab="${tabId}"]`).classList.add('bg-blue-100', 'text-blue-600', 'font-semibold');
-  document.querySelector(`.tab-link[data-tab="${tabId}"]`).classList.remove('text-gray-600');
-}
-
-async function loadDropdown(selectId, apiUrl, valueField, labelField) {
-  const select = document.getElementById(selectId);
-  select.innerHTML = `<option value="">Loading...</option>`;
-
-  try {
-    const response = await fetch(apiUrl, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${API_TOKEN}`,
-        'Content-Type': 'application/json'
-      }
-    });
-
-    const result = await response.json();
-    console.log(`Data untuk ${selectId}:`, result);
-    const listData = result.listData;
-
-    select.innerHTML = `<option value="">Pilih...</option>`;
-
-    if (Array.isArray(listData)) {
-      listData.forEach(item => {
-        const option = document.createElement('option');
-        option.value = item[valueField];
-        option.textContent = item[labelField];
-        select.appendChild(option);
-      });
-    } else {
-      console.error('Format listData tidak sesuai:', listData);
+  document.addEventListener("click", (e) => {
+    if (!input.contains(e.target) && !suggestionsBox.contains(e.target)) {
+      suggestionsBox.classList.add("hidden");
     }
+  });
+}
 
-  } catch (error) {
-    console.error(`Gagal memuat data untuk ${selectId}:`, error);
-    select.innerHTML = `<option value="">Gagal memuat data</option>`;
+// mapping project ke form
+function selectProject(data) {
+  document.getElementById("projectInput").value = data.project_name || "";
+  document.getElementById("project_id").value = data.project_id || "";
+  document.getElementById("pelanggan_id").value = data.pelanggan_id || "";
+  document.getElementById("project_number").value = data.project_number || "";
+
+  let poValue = data.po_number;
+  if (!poValue || poValue.trim() === "") {
+    const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+    poValue = `PO-${dateStr}`;
   }
+  document.getElementById("po_number").value = poValue;
+  document.getElementById("project_amount").value = finance(data.contract_amount);
+
+  document.getElementById("projectSuggestions").classList.add("hidden");
+  document.getElementById("currency").value = "IDR";
+  autoSetRate(document.getElementById("currency"));
+
+  document.getElementById("nominal").value = "";
+  document.getElementById("total_invoice").value = "";
+  document.getElementById("ppn_nominal").value = "0";
+  document.getElementById("total_after_tax").value = "0";
 }
 
-async function loadDetail(Id, Detail) {
-  // Set judul form dan simpan ID global
-  document.getElementById('formTitle').innerText = 'FORM PAYABLE DETAIL';
-  window.detail_id = Id;
-  window.detail_desc = Detail;
-
-  console.log('ID:', window.detail_id);
-  console.log('DATA:', window.detail_desc);
-
-  try {
-    const res = await fetch(`${baseUrl}/detail/${currentDataType}/${Id}?_=${Date.now()}`, {
-      headers: { Authorization: `Bearer ${API_TOKEN}` }
-    });
-
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const { detail } = await res.json();
-    console.log('DETAIL DATA:', detail);
-
-    // Mapping data ke form
-    document.getElementById('project').value = detail.project_name || '';
-    document.getElementById('po_number').value = detail.po_number || '';
-    document.getElementById('client').value = detail.client || '';
-    document.getElementById('description').value = detail.description || '';
-    document.getElementById('invoice_date').value = detail.inv_date || '';
-    document.getElementById('invoice_number').value = detail.inv_number || '';
-    document.getElementById('total_invoice').value = finance(detail.total_inv) || '';
-    document.getElementById('currency').value = detail.currency || '';
-    document.getElementById('rate').value = detail.currency === 'IDR' ? '1' : '';
-    document.getElementById('ppn_percent').value = detail.ppn_percent || '';
-    document.getElementById('ppn_nominal').value = finance(detail.ppn_nominal) || '';
-    document.getElementById('pph_percent').value = detail.pph_percent || '';
-    document.getElementById('pph_nominal').value = finance(detail.pph_nominal) || '';
-    document.getElementById('total_after_tax').value = finance(detail.total_inv_tax) || '';
-
-  } catch (err) {
-    console.error('Gagal load detail:', err);
-    Swal.fire({
-      icon: 'error',
-      title: 'Gagal Memuat Data',
-      text: err.message || 'Terjadi kesalahan saat memuat data detail.',
-    });
-  }
+/**
+ * helper utils
+ */
+function unfinance(val) {
+  if (!val) return 0;
+  if (typeof val === "number") return val;
+  let str = val.toString().replace(/\./g, "").replace(",", ".");
+  return parseFloat(str) || 0;
 }
 
-
-async function loadKategoriOptions(Id, selectedIds = []) {
-  try {
-    const res = await fetch(`${baseUrl}/list/business_category/${owner_id}`, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${API_TOKEN}`
-      }
-    });
-
-    const result = await res.json();
-    const kategoriList = result.listData || [];
-
-    const container = document.getElementById('kategoriList');
-    const countDisplay = document.getElementById('selectedCount');
-    const searchInput = document.getElementById('searchKategori');
-
-    container.innerHTML = '';
-    countDisplay.textContent = `0 kategori dipilih`;
-
-    // Pisahkan yang terpilih dan tidak terpilih
-    const selectedItems = kategoriList.filter(item => selectedIds.includes(item.business_category_id));
-    const unselectedItems = kategoriList.filter(item => !selectedIds.includes(item.business_category_id));
-    const sortedList = [...selectedItems, ...unselectedItems];
-
-    sortedList.forEach(item => {
-      const checkboxWrapper = document.createElement('label');
-      checkboxWrapper.className = "flex items-start gap-2 p-2 border rounded hover:bg-gray-100 kategori-item";
-
-      const checkbox = document.createElement('input');
-      checkbox.type = 'checkbox';
-      checkbox.name = 'kategori';
-      checkbox.value = item.business_category_id;
-      checkbox.className = 'mt-1';
-
-      // Jika termasuk yang dipilih
-      if (selectedIds.includes(item.business_category_id)) {
-        checkbox.checked = true;
-        checkboxWrapper.classList.add('bg-green-100'); // Warna hijau
-      }
-
-      const labelText = document.createElement('div');
-      labelText.innerHTML = `<strong>${item.business_category}</strong><br><small>${item.description || ''}</small>`;
-
-      checkboxWrapper.appendChild(checkbox);
-      checkboxWrapper.appendChild(labelText);
-      container.appendChild(checkboxWrapper);
-
-      checkbox.addEventListener('change', () => updateSelectedCount());
-
-      checkboxWrapper.dataset.category = `${item.business_category} ${item.description || ''}`.toLowerCase();
-    });
-
-    function updateSelectedCount() {
-      const selected = container.querySelectorAll('input[name="kategori"]:checked').length;
-      countDisplay.textContent = `${selected} kategori dipilih`;
-    }
-
-    // Inisialisasi count awal
-    updateSelectedCount();
-
-    // Pencarian
-    searchInput.addEventListener('input', function () {
-      const keyword = this.value.toLowerCase();
-      const items = container.querySelectorAll('.kategori-item');
-
-      items.forEach(item => {
-        const text = item.dataset.category;
-        item.style.display = text.includes(keyword) ? 'flex' : 'none';
-      });
-    });
-
-  } catch (err) {
-    console.error('Gagal load kategori:', err);
-  }
+function finance(val) {
+  if (val === "" || val === null || val === undefined) return "0";
+  let num = parseFloat(val);
+  if (isNaN(num)) return "0";
+  return num.toLocaleString("id-ID");
 }
 
-function formatMembershipID(id) {
-  return 'CUS-' + id.toString().padStart(5, '0');
+function formatNumber(input) {
+  if (input.value === "") return;
+  let originalVal = unfinance(input.value);
+  input.value = finance(originalVal);
 }
 
+async function generateInvoiceNumber() {
+  // payable tidak auto-generate, biarkan manual input
+}
+
+// get data payload
 function getDataPayload() {
-  const getVal = id => document.getElementById(id).value.trim();
+  const getVal = (id) => {
+    const el = document.getElementById(id);
+    return el ? el.value.trim() : "";
+  };
+
+  const ppnEnabled = document.getElementById("ppn_enabled")?.checked;
+  const pphEnabled = document.getElementById("pph_enabled")?.checked;
 
   const payload = {
     owner_id,
-    user_id, 
-    prefix: 'INV',
-    project_id: getVal('project'),
-    client: getVal('client'),
-    po_number: getVal('po_number'),
-    inv_number: getVal('invoice_number'),
-    inv_date: getVal('invoice_date'),
-    due_date: '', // bisa tambahkan input due_date di form jika diperlukan
-    payment_date: '', // atau ambil dari detail pembayaran
-    currency: getVal('currency'),
-    total_inv: unfinance(getVal('total_invoice')), // ubah ke angka murni
-    ppn_percent: getVal('ppn_percent'),
-    ppn_nominal: unfinance(getVal('ppn_nominal')),
-    pph_percent: getVal('pph_percent'),
-    pph_nominal: unfinance(getVal('pph_nominal')),
-    total_inv_tax: unfinance(getVal('total_after_tax')),
-    akun: '', // bisa diisi nanti di tab akun
-    description: getVal('description'),
-    detail_inv: window.detail_desc || '',
-    file: '' // handle upload file jika ada
+    user_id,
+    project_id: getVal("project_id"),
+    pelanggan_id: getVal("pelanggan_id"),
+    project_number: getVal("project_number"),
+    vendor: getVal("vendor"),
+    po_number: getVal("po_number"),
+    inv_number: getVal("invoice_number"),
+    inv_date: getVal("invoice_date"),
+    due_date: getVal("due_date"),
+    payment_date: getVal("payment_date"),
+
+    currency: getVal("currency"),
+    rate: unfinance(getVal("rate")),
+    nominal: unfinance(getVal("nominal")),
+    total_converted: unfinance(getVal("total_converted")),
+    total_inv: unfinance(getVal("total_invoice")),
+
+    ppn_percent: ppnEnabled ? getVal("ppn_percent") : "0",
+    ppn_nominal: ppnEnabled ? unfinance(getVal("ppn_nominal")) : 0,
+    pph_percent: pphEnabled ? getVal("pph_percent") : "0",
+    pph_nominal: pphEnabled ? unfinance(getVal("pph_nominal")) : 0,
+    total_inv_tax: unfinance(getVal("total_after_tax")),
+
+    description: getVal("description"),
+    detail_inv: window.detail_desc || "",
   };
 
-  console.log(payload);
-
-  // Validasi wajib
-  if (!payload.nama || !payload.whatsapp) {
-    Swal.fire({
-      icon: 'warning',
-      title: 'Data wajib belum lengkap',
-      text: 'Isi Nama, dan Whatsapp terlebih dahulu.',
-    });
+  if (!payload.project_id) {
+    Swal.fire("Warning", "Project belum dipilih!", "warning");
+    return null;
+  }
+  if (!payload.inv_date) {
+    Swal.fire("Warning", "Tanggal Invoice wajib diisi!", "warning");
     return null;
   }
 
   return payload;
 }
 
-async function submitData(method, id = '') {
+// submit data
+async function submitData(method, id = "") {
   const payload = getDataPayload();
   if (!payload) return;
+  const isCreate = method === "POST";
+  const url = `${baseUrl}/${isCreate ? "add" : "update"}/account_payable${id ? "/" + id : ""}`;
 
-  const isCreate = method === 'POST';
-  const url = `${baseUrl}/${isCreate ? 'add' : 'update'}/client${id ? '/' + id : ''}`;
-  const actionText = isCreate ? 'menyimpan' : 'memperbarui';
-  const successText = isCreate ? 'ditambahkan' : 'diperbarui';
-
-  const confirm = await Swal.fire({
-    icon: 'question',
-    title: isCreate ? 'Simpan Data?' : 'Perbarui Data?',
-    text: `Apakah Anda yakin ingin ${actionText} data pelanggan ini?`,
-    showCancelButton: true,
-    confirmButtonText: `Ya, ${isCreate ? 'simpan' : 'perbarui'}`,
-    cancelButtonText: 'Batal'
-  });
-
-  if (!confirm.isConfirmed) return;
+  console.log("=== DEBUG PAYLOAD ===");
+  console.log("URL:", url);
+  console.log("Method:", method);
+  console.log("Payload:", JSON.stringify(payload, null, 2));
 
   try {
     const response = await fetch(url, {
-      method,
+      method: method,
       headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${API_TOKEN}`
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${API_TOKEN}`,
       },
-      body: JSON.stringify(payload)
+      body: JSON.stringify(payload),
     });
-
-    const result = await response.json();
-
-    if (result.data && result.data.id) {
-      Swal.fire({
-        icon: 'success',
-        title: 'Berhasil',
-        text: `Data pelanggan berhasil ${successText}.`
-      });
-      const { id } = result.data;
-      loadModuleContent('contact');
+    
+    const responseText = await response.text();
+    console.log("Response Status:", response.status);
+    console.log("Response Body:", responseText);
+    
+    let result;
+    try {
+      result = JSON.parse(responseText);
+    } catch (e) {
+      throw new Error(`Server error: ${responseText}`);
+    }
+    
+    if (result.status === "success" || (result.data && result.data.id)) {
+      Swal.fire("Berhasil", `Data berhasil ${isCreate ? "disimpan" : "diupdate"}.`, "success");
+      loadModuleContent("payable");
     } else {
-      throw new Error(result.message || `Gagal ${actionText} data pelanggan`);
+      throw new Error(result.message || "Gagal menyimpan data.");
     }
   } catch (error) {
     console.error(error);
-    Swal.fire({
-      icon: 'error',
-      title: 'Gagal',
-      text: error.message || `Terjadi kesalahan saat ${actionText} data.`
-    });
+    Swal.fire("Error", error.message, "error");
   }
 }
 
 async function createData() {
-  await submitData('POST');
+  await submitData("POST");
 }
 
 async function updateData() {
-  await submitData('PUT', detail_id);
+  await submitData("PUT", detail_id);
 }
 
-input = document.getElementById('cityInput');
-resultList = document.getElementById('resultList');
+// currency rates
+var currencyRates = {
+  IDR: 1, USD: 16689, EUR: 19418, SGD: 12879, JPY: 107,
+  CNY: 2360, GBP: 22258, AUD: 11079, MYR: 4059, THB: 522
+};
 
-// Fungsi debounce
-function debounce(fn, delay) {
-  let timer;
-  return function (...args) {
-    clearTimeout(timer);
-    timer = setTimeout(() => fn.apply(this, args), delay);
-  };
-}
+var supportedCurrencies = ['USD', 'EUR', 'SGD', 'JPY', 'CNY', 'GBP', 'AUD', 'MYR', 'THB'];
 
-// Fungsi pencarian dan render hasil
-async function searchCity(query) {
-  if (!query.trim()) {
-    resultList.innerHTML = '';
-    resultList.classList.add('hidden');
-    return;
+async function fetchRateFromHexarate(currency) {
+  try {
+    const response = await fetch(`https://hexarate.paikama.co/api/rates/latest/${currency}?target=IDR`);
+    const data = await response.json();
+    if (data.status_code === 200 && data.data && data.data.mid) {
+      return Math.round(data.data.mid);
+    }
+  } catch (error) {
+    console.warn(`Failed to fetch rate for ${currency}:`, error.message);
   }
+  return null;
+}
+
+async function fetchSingleRate(currency) {
+  if (currency === 'IDR') return 1;
+  const rate = await fetchRateFromHexarate(currency);
+  if (rate !== null) {
+    currencyRates[currency] = rate;
+    return rate;
+  }
+  return currencyRates[currency] || 1;
+}
+
+async function autoSetRate(input) {
+  if (!input) return;
+
+  const val = input.value.toUpperCase();
+  const rateInput = document.getElementById("rate");
+
+  if (val === "IDR") {
+    rateInput.value = "1";
+    rateInput.setAttribute("readonly", true);
+    rateInput.classList.add("bg-gray-100");
+  } else {
+    rateInput.value = "Loading...";
+    rateInput.classList.add("bg-gray-100");
+    
+    const rate = await fetchSingleRate(val);
+    rateInput.value = finance(rate);
+    
+    rateInput.removeAttribute("readonly");
+    rateInput.classList.remove("bg-gray-100");
+  }
+
+  if (typeof calculateKonversi === "function") {
+    calculateKonversi();
+  }
+}
+
+/**
+ * load detail (untuk mode edit)
+ */
+async function loadDetail(Id, Detail) {
+  document.getElementById("formTitle").innerText = "EDIT PAYABLE";
+  window.detail_id = Id;
+  window.detail_desc = Detail;
 
   try {
-    const url = `https://region.katib.cloud/table/region/${owner_id}/1?search=${encodeURIComponent(query)}`;
-    const res = await fetch(url, {
-      headers: {
-        Authorization: `Bearer 0f4d99ae56bf938a9dc29d4f4dc499b919e44f4d3774cf2e5c7b9f5395d05fc6`
+    const res = await fetch(
+      `${baseUrl}/detail/${currentDataType}/${Id}?_=${Date.now()}`,
+      { headers: { Authorization: `Bearer ${API_TOKEN}` } }
+    );
+    const result = await res.json();
+    const detail = result.detail || result;
+
+    console.log("Detail data:", detail);
+
+    // mapping info project
+    document.getElementById("projectInput").value = detail.project_name || "";
+    document.getElementById("project_id").value = detail.project_id || "";
+    document.getElementById("pelanggan_id").value = detail.pelanggan_id || "";
+    document.getElementById("project_number").value = detail.project_number || detail.nomor_project || "";
+    document.getElementById("po_number").value = detail.po_number || "";
+    document.getElementById("vendor").value = detail.vendor || detail.supplier || "";
+
+    let amount = detail.contract_amount || detail.project_amount || 0;
+    document.getElementById("project_amount").value = finance(amount);
+    document.getElementById("description").value = detail.description || "";
+
+    // mapping tanggal & no inv
+    document.getElementById("invoice_date").value = detail.inv_date || "";
+    document.getElementById("due_date").value = detail.due_date || "";
+    document.getElementById("payment_date").value = detail.payment_date || "";
+    document.getElementById("invoice_number").value = detail.inv_number || "";
+
+    // mapping keuangan
+    let curr = detail.currency || "IDR";
+    document.getElementById("currency").value = curr;
+
+    let dbRate = parseFloat(detail.rate) || 0;
+    if (curr === "IDR" && dbRate === 0) dbRate = 1;
+    document.getElementById("rate").value = finance(dbRate);
+
+    let dbTotalInv = parseFloat(detail.total_inv) || 0;
+    let dbNominal = parseFloat(detail.nominal) || 0;
+
+    if (dbNominal === 0 && dbTotalInv > 0) {
+      if (curr === "IDR") {
+        dbNominal = dbTotalInv;
+      } else {
+        dbNominal = dbTotalInv / dbRate;
       }
-    });
+    }
 
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    document.getElementById("nominal").value = finance(dbNominal);
+    document.getElementById("total_converted").value = finance(dbTotalInv);
+    document.getElementById("total_invoice").value = finance(dbTotalInv);
 
-    const data = await res.json();
-    const results = data.tableData || [];
+    // pajak - set checkbox state
+    const ppnPercent = parseFloat(detail.ppn_percent) || 0;
+    const pphPercent = parseFloat(detail.pph_percent) || 0;
+    const ppnNominal = parseFloat(detail.ppn_nominal) || 0;
+    const pphNominal = parseFloat(detail.pph_nominal) || 0;
+    
+    const ppnCheckbox = document.getElementById("ppn_enabled");
+    const pphCheckbox = document.getElementById("pph_enabled");
+    const ppnPercentInput = document.getElementById("ppn_percent");
+    const pphPercentInput = document.getElementById("pph_percent");
+    
+    if (ppnPercent > 0 || ppnNominal > 0) {
+      ppnCheckbox.checked = true;
+      ppnPercentInput.disabled = false;
+      ppnPercentInput.classList.remove("bg-gray-100");
+    } else {
+      ppnCheckbox.checked = false;
+      ppnPercentInput.disabled = true;
+      ppnPercentInput.classList.add("bg-gray-100");
+    }
+    ppnPercentInput.value = ppnPercent || 11;
+    document.getElementById("ppn_nominal").value = finance(ppnNominal);
+    
+    if (pphPercent > 0 || pphNominal > 0) {
+      pphCheckbox.checked = true;
+      pphPercentInput.disabled = false;
+      pphPercentInput.classList.remove("bg-gray-100");
+    } else {
+      pphCheckbox.checked = false;
+      pphPercentInput.disabled = true;
+      pphPercentInput.classList.add("bg-gray-100");
+    }
+    pphPercentInput.value = pphPercent || 2;
+    document.getElementById("pph_nominal").value = finance(pphNominal);
+    
+    document.getElementById("total_after_tax").value = finance(detail.total_inv_tax);
 
-    resultList.innerHTML = results.length
-      ? results.map(item => `
-          <li class="px-3 py-2 border-b hover:bg-gray-100 cursor-pointer"
-              data-kelurahan="${item.kelurahan}"
-              data-kecamatan="${item.kecamatan}"
-              data-kota="${item.kota}"
-              data-provinsi="${item.provinsi}"
-              data-kodepos="${item.kode_pos}"
-              data-region_id="${item.region_id}">
-              ${item.kelurahan}, ${item.kecamatan}, ${item.kota}, ${item.provinsi} ${item.kode_pos}
-          </li>`).join('')
-      : '<li class="px-3 py-2 text-gray-500">Tidak ditemukan</li>';
-
-    resultList.classList.remove('hidden');
-
-    // Tambahkan event listener untuk setiap <li>
-    resultList.querySelectorAll('li[data-kelurahan]').forEach(li => {
-      li.addEventListener('click', () => {
-        document.getElementById('formregion_ID').value = li.dataset.region_id;
-        document.getElementById('formKelurahan').value = li.dataset.kelurahan;
-        document.getElementById('formKecamatan').value = li.dataset.kecamatan;
-        document.getElementById('formKota').value = li.dataset.kota;
-        document.getElementById('formProvinsi').value = li.dataset.provinsi;
-        document.getElementById('formPOS').value = li.dataset.kodepos;
-
-        input.value = li.textContent;
-        resultList.classList.add('hidden');
-      });
-    });
-
+    // finalisasi ui
+    if (curr !== "IDR") {
+      const rateInput = document.getElementById("rate");
+      rateInput.removeAttribute("readonly");
+      rateInput.classList.remove("bg-gray-100");
+    }
+    
+    const projectAmount = unfinance(document.getElementById("project_amount").value);
+    if (projectAmount > 0) {
+      const percentConverted = (dbTotalInv / projectAmount) * 100;
+      document.getElementById("percent_converted").value = percentConverted.toFixed(2).replace(/\.00$/, "");
+      document.getElementById("percent_invoice").value = percentConverted.toFixed(2).replace(/\.00$/, "");
+    }
   } catch (err) {
-    console.error('Gagal ambil data wilayah:', err);
-    resultList.innerHTML = '<li class="px-2 py-1 text-red-500">Gagal ambil data</li>';
-    resultList.classList.remove('hidden');
+    console.error("Gagal load detail:", err);
+    Swal.fire("Error", "Gagal mengambil data detail.", "error");
   }
 }
-
-input.addEventListener('input', debounce((e) => {
-  searchCity(e.target.value);
-}, 400));
