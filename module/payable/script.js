@@ -1,7 +1,38 @@
-pagemodule = 'User'
-colSpanCount = 9;
+pagemodule = 'Payable';
+colSpanCount = 4;
 setDataType('account_payable');
 fetchAndUpdateData();
+
+console.log('=== Payable Module Loaded ===');
+console.log('Current data type:', currentDataType);
+console.log('Owner ID:', owner_id);
+console.log('User ID:', user_id);
+
+function loadSummary(dataSummary) {
+  console.log('=== Payable loadSummary called ===');
+  console.log('Data Summary:', dataSummary);
+
+  const summary = dataSummary || {};
+  console.log('Summary fields:', {
+    totalInvoice: summary.totalInvoice,
+    totalPpn: summary.totalPpn,
+    totalPph: summary.totalPph,
+    totalFinal: summary.totalFinal
+  });
+
+  document.getElementById('summary_total_invoice').textContent = finance(
+    summary.totalInvoice || 0
+  );
+  document.getElementById('summary_total_ppn').textContent = finance(
+    summary.totalPpn || 0
+  );
+  document.getElementById('summary_total_pph').textContent = finance(
+    summary.totalPph || 0
+  );
+  document.getElementById('summary_total_final').textContent = finance(
+    summary.totalFinal || 0
+  );
+}
 
 function validateFormData(formData, requiredFields = []) {
   console.log('Validasi Form');
@@ -99,14 +130,32 @@ function loadDropdownCall() {
 } 
 
 
-  window.rowTemplate = function (item, index, perPage = 10) {
-    const { currentPage } = state[currentDataType];
-    const globalIndex = (currentPage - 1) * perPage + index + 1;
-  
-    return `
+window.rowTemplate = function (item, index, perPage = 10) {
+  const { currentPage } = state[currentDataType];
+  const globalIndex = (currentPage - 1) * perPage + index + 1;
+
+  console.log(`Rendering payable row ${globalIndex}:`, item);
+
+  // status badge logic
+  let statusBadgeClass = '';
+  const statusCheck = item.status ? item.status.trim() : '';
+
+  if (statusCheck === 'Belum Jatuh Tempo') {
+    statusBadgeClass = 'bg-green-100 text-green-700 border border-green-300';
+  } else if (statusCheck === 'Jatuh Tempo Hari ini') {
+    statusBadgeClass = 'bg-yellow-100 text-yellow-800 border border-yellow-300';
+  } else if (statusCheck === 'Terlambat') {
+    statusBadgeClass = 'bg-red-100 text-red-700 border border-red-300';
+  } else if (statusCheck === 'Terbayar') {
+    statusBadgeClass = 'bg-blue-100 text-blue-700 border border-blue-300';
+  } else {
+    statusBadgeClass = 'bg-gray-100 text-gray-700 border border-gray-300';
+  }
+
+  return `
   <tr class="flex flex-col sm:table-row border rounded sm:rounded-none mb-4 sm:mb-0 shadow-sm sm:shadow-none transition hover:bg-gray-50">  
   
-    <td class="px-6 py-4 text-sm text-gray-700  w-[15%] border-b sm:border-0 sm:table-cell  align-top">
+    <td class="px-6 py-4 text-sm text-gray-700 border border-gray-200">
       <div class="flex flex-col space-y-1">
         <div class="flex justify-between">
           <span class="font-medium">Invoice</span>
@@ -120,10 +169,14 @@ function loadDropdownCall() {
           <span class="font-medium">Payment</span>
           <span class="text-gray-600">${item.payment_date}</span>
         </div>
+        <div class="flex justify-between">
+          <span class="font-medium">Aging</span>
+          <span class="text-gray-600">${item.aging}</span>
+        </div>
       </div>
     </td>
 
-    <td class="px-6 py-4 text-sm text-gray-700 border-b sm:border-0 sm:table-cell  align-top">
+    <td class="px-6 py-4 text-sm text-gray-700 border border-gray-200">
       <div class="grid grid-cols-[100px_auto] gap-x-2 gap-y-1">
         <span class="font-medium">PO#</span>
         <span class="text-gray-600">${item.po_number}</span>
@@ -139,61 +192,64 @@ function loadDropdownCall() {
       </div>
     </td>
 
-    <td class="px-6 py-4 text-sm text-gray-700 border-b sm:border-0 flex justify-between sm:table-cell  align-top">
-      <span class="font-medium sm:hidden">Email</span>
+    <td class="px-6 py-4 text-sm text-gray-700 border border-gray-200">
+      <span class="font-medium sm:hidden">Vendor</span>
       <span class="uppercase">${item.vendor}</span>
     </td>
 
-    <td class="px-6 py-4 text-sm text-gray-700 border-b sm:border-0 flex justify-between sm:table-cell  align-top">
-      <span class="font-medium sm:hidden">Email</span>
-      ${item.detail_inv}
-    </td>
-   
-
-<td class="px-6 py-4 text-sm text-gray-700 text-right w-[15%] align-top">
-  <div class="flex flex-col space-y-1">
-      <div class="flex justify-between">
-        <span class="font-medium">Amount</span>
-        <span class="font-semibold text-gray-600">${finance(item.total_inv)}</span>
-      </div>
-
-    ${item.ppn_nominal && item.ppn_nominal != 0 ? `
-      <div class="flex justify-between">
-        <span class="font-medium">PPN (${item.ppn_percent}%)</span>
-        <span class="text-gray-600">${finance(item.ppn_nominal)}</span>
-      </div>
-    ` : ''}
-
-    ${item.pph_nominal && item.pph_nominal != 0 ? `
-      <div class="flex justify-between">
-        <span class="font-medium">PPH (${item.pph_percent}%)</span>
-        <span class="text-gray-600">${finance(item.pph_nominal)}</span>
-      </div>
-    ` : ''}
-
-    ${
-      (item.ppn_nominal && item.ppn_nominal != 0) || (item.pph_nominal && item.pph_nominal != 0)
-        ? `
+    <td class="px-6 py-4 text-sm text-gray-700 border border-gray-200">
+      <div class="flex flex-col space-y-2">
         <div class="flex justify-between">
-          <span class="font-medium">Final</span>
-          <span class="text-gray-600">${finance(item.total_inv_tax)}</span>
+          <span class="font-medium">Amount</span>
+          <span class="font-semibold text-gray-600">
+            ${item.transaction_type === 'debit'
+              ? `<span class='text-red-600'>(${finance(item.total_inv)})</span>`
+              : finance(item.total_inv)
+            }
+          </span>
         </div>
-        `
-        : ''
-    }
-  </div>
 
-  <div class="dropdown-menu hidden fixed w-48 bg-white border rounded shadow z-50 text-sm">
-    <button onclick="event.stopPropagation(); loadModuleContent('receivable_form', '${item.payable_id}', '${item.project_name}');" class="block w-full text-left px-4 py-2 hover:bg-gray-100">✏️ Edit</button>
-    <button onclick="event.stopPropagation(); handleDelete(${item.payable_id})" class="block w-full text-left px-4 py-2 hover:bg-gray-100 text-red-600">
-      🗑 Delete
-    </button>
-  </div>
-</td>
+        ${item.ppn_nominal && item.ppn_nominal != 0 ? `
+          <div class="flex justify-between">
+            <span class="font-medium">PPN (${item.ppn_percent}%)</span>
+            <span class="text-gray-600">${finance(item.ppn_nominal)}</span>
+          </div>
+        ` : ''}
 
+        ${item.pph_nominal && item.pph_nominal != 0 ? `
+          <div class="flex justify-between">
+            <span class="font-medium">PPH (${item.pph_percent}%)</span>
+            <span class="text-gray-600">${finance(item.pph_nominal)}</span>
+          </div>
+        ` : ''}
 
+        ${(item.ppn_nominal && item.ppn_nominal != 0) || (item.pph_nominal && item.pph_nominal != 0)
+          ? `
+          <div class="flex justify-between">
+            <span class="font-medium">Final</span>
+            <span class="text-gray-600">${finance(item.total_inv_tax)}</span>
+          </div>
+          `
+          : ''
+        }
+
+        <div class="flex justify-between items-center mt-2">
+          <span class="font-medium">Status</span>
+          <span class="px-2 py-1 rounded text-xs font-semibold ${statusBadgeClass}">
+            ${item.status}
+          </span>
+        </div>
+      </div>
+
+      <div class="dropdown-menu hidden fixed w-48 bg-white border rounded shadow z-50 text-sm">
+        <button onclick="event.stopPropagation(); loadModuleContent('payable_form', '${item.payable_id}', '${item.project_name}');" class="block w-full text-left px-4 py-2 hover:bg-gray-100">✏️ Edit</button>
+        <button onclick="event.stopPropagation(); handleDelete(${item.payable_id})" class="block w-full text-left px-4 py-2 hover:bg-gray-100 text-red-600">
+          🗑 Delete
+        </button>
+      </div>
+    </td>
   </tr>`;
-  };
+};
   
   document.getElementById('addButton').addEventListener('click', () => {
     // showFormModal();

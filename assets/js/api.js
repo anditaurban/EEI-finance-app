@@ -117,19 +117,27 @@ async function checkApiStatus() {
 
 async function fetchData(type, page = 1, id = null, filter=null) {
   try {
+    const filterQuery = filter ? `&${filter}` : '';
     let url = id 
-      ? `${endpoints[type].table}/${id}/${page}?search=${currentDataSearch}&${filter}` 
-      : `${endpoints[type].table}/${page}?search=${currentDataSearch}&${filter}`;
-    // console.log(url);
+      ? `${endpoints[type].table}/${id}/${page}?search=${currentDataSearch}${filterQuery}` 
+      : `${endpoints[type].table}/${page}?search=${currentDataSearch}${filterQuery}`;
+    
     const response = await fetch(url, {
       headers: { 'Authorization': `Bearer ${API_TOKEN}` }
     });
     
-
-    console.log ('Fetch URL=' , url)
+    console.log('Fetch URL=', url);
+    console.log('Response status:', response.status, response.statusText);
     
-    if (!response.ok) throw new Error('Network response was not ok');
-    return await response.json();
+    if (!response.ok) {
+      console.error('API Error:', response.status, response.statusText);
+      throw new Error('Network response was not ok');
+    }
+    
+    const data = await response.json();
+    console.log('API Response data:', data);
+    
+    return data;
   } catch (error) {
     console.error(`Error fetching ${type} data:`, error);
     return { data: [], totalRecords: 0, totalPages: 0 };
