@@ -208,7 +208,7 @@ function setupProjectSearch() {
 }
 
 // mapping project ke form
-function selectProject(data) {
+async function selectProject(data) {
   document.getElementById("projectInput").value = data.project_name || "";
   document.getElementById("project_id").value = data.project_id || "";
   document.getElementById("pelanggan_id").value = data.pelanggan_id || "";
@@ -230,6 +230,9 @@ function selectProject(data) {
   document.getElementById("total_invoice").value = "";
   document.getElementById("ppn_nominal").value = "0";
   document.getElementById("total_after_tax").value = "0";
+  
+  // load vendors for this project
+  await loadVendorsForProject(data.project_id);
 }
 
 /**
@@ -255,8 +258,174 @@ function formatNumber(input) {
   input.value = finance(originalVal);
 }
 
+// load vendors for selected project
+async function loadVendorsForProject(projectId) {
+  if (!projectId) return;
+  
+  console.log('=== Load Vendors API Call ===');
+  console.log('Project ID:', projectId);
+  
+  // get project number to match with API response
+  const projectNumber = document.getElementById('project_number').value;
+  console.log('Project Number:', projectNumber);
+  
+  try {
+    const url = `${baseUrl}/table/project_vendor/${owner_id}/1?search=`;
+    console.log('Request URL:', url);
+    
+    const response = await fetch(url, {
+      headers: { Authorization: `Bearer ${API_TOKEN}` }
+    });
+    
+    console.log('Response Status:', response.status, response.statusText);
+    
+    if (!response.ok) {
+      console.warn('Failed to fetch project vendors');
+      setupVendorField([]);
+      return;
+    }
+    
+    const result = await response.json();
+    console.log('Project Vendors API Response:', result);
+    
+    const projects = result.tableData || [];
+    console.log('Total projects:', projects.length);
+    
+    // find matching project by project_id or project_number
+    const matchingProject = projects.find(p => 
+      p.project_id === parseInt(projectId) || 
+      p.project_number === projectNumber
+    );
+    
+    console.log('Matching project:', matchingProject);
+    
+    if (!matchingProject) {
+      console.warn('No matching project found');
+      setupVendorField([]);
+      return;
+    }
+    
+    const vendors = matchingProject.vendor_detail || [];
+    console.log('Vendors Count:', vendors.length);
+    console.log('Vendors:', vendors);
+    
+    setupVendorField(vendors);
+  } catch (error) {
+    console.error('Error loading vendors:', error);
+    setupVendorField([]);
+  }
+}
+
+// setup vendor field (dropdown or input)
+function setupVendorField(vendors) {
+  console.log('=== Setup Vendor Field ===');
+  console.log('Vendor count:', vendors.length);
+  
+  const container = document.querySelector('[data-vendor-container]') || document.getElementById('vendor').parentElement;
+  const currentVendor = document.getElementById('vendor');
+  
+  // remove existing field
+  if (currentVendor) {
+    currentVendor.remove();
+  }
+  
+  if (vendors.length > 1) {
+    console.log('Creating dropdown for multiple vendors');
+    // multiple vendors - show dropdown
+    const select = document.createElement('select');
+    select.id = 'vendor';
+    select.name = 'vendor';
+    select.className = 'flex-1 border border-gray-300 rounded px-3 py-2 focus:ring-2 focus:ring-blue-500';
+    
+    const defaultOption = document.createElement('option');
+    defaultOption.value = '';
+    defaultOption.textContent = 'Pilih Vendor...';
+    select.appendChild(defaultOption);
+    
+    vendors.forEach(vendor => {
+      const option = document.createElement('option');
+      option.value = vendor.vendor || '';
+      option.textContent = vendor.vendor || 'N/A';
+      option.dataset.vendorId = vendor.vendor_id || '';
+      option.dataset.contractAmount = vendor.contract_amount || 0;
+      select.appendChild(option);
+    });
+    
+    container.appendChild(select);
+  } else if (vendors.length === 1) {
+    console.log('Creating readonly field for single vendor:', vendors[0].vendor);
+    // single vendor - show readonly input
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.id = 'vendor';
+    input.name = 'vendor';
+    input.value = vendors[0].vendor || '';
+    input.className = 'flex-1 border border-yellow-400 bg-yellow-50 rounded px-3 py-2';
+    input.readOnly = true;
+    input.dataset.vendorId = vendors[0].vendor_id || '';
+    input.dataset.contractAmount = vendors[0].contract_amount || 0;
+    
+    container.appendChild(input);
+  } else {
+    console.log('Creating manual input field (no vendors)');
+    // no vendors - show manual input
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.id = 'vendor';
+    input.name = 'vendor';
+    input.placeholder = 'Nama vendor/supplier...';
+    input.className = 'flex-1 border border-gray-300 rounded px-3 py-2 focus:ring-2 focus:ring-blue-500';
+    
+    container.appendChild(input);
+  }
+}
+
 async function generateInvoiceNumber() {
-  // payable tidak auto-generate, biarkan manual input
+  const projectNumber = document.getElementById('project_number').value;
+  const invDate = document.getElementById('invoice_date').value;
+  
+  console.log('=== Generate Invoice Number API Call ===');
+  console.log('Project Number:', projectNumber);
+  console.log('Invoice Date:', invDate);
+  
+  if (!projectNumber || !invDate) {
+    console.log('Project number or invoice date not set - skipping generation');
+    return;
+  }
+  
+  try {
+    const url = `${baseUrl}/generate/po_number`;
+    const payload = {
+      project_number: projectNumber,
+      inv_date: invDate
+    };
+    
+    console.log('Request URL:', url);
+    console.log('Request Payload:', JSON.stringify(payload, null, 2));
+    
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${API_TOKEN}`
+      },
+      body: JSON.stringify(payload)
+    });
+    
+    console.log('Response Status:', response.status, response.statusText);
+    
+    const result = await response.json();
+    console.log('Generate PO Number API Response:', JSON.stringify(result, null, 2));
+    
+    if (result.data && result.data.success && result.data.po_number) {
+      document.getElementById('invoice_number').value = result.data.po_number;
+      console.log('✅ Invoice number set to:', result.data.po_number);
+    } else {
+      console.warn('❌ Failed to generate invoice number:', result);
+    }
+  } catch (error) {
+    console.error('❌ Error generating invoice number:', error);
+  }
 }
 
 // get data payload
@@ -444,7 +613,21 @@ async function loadDetail(Id, Detail) {
     document.getElementById("pelanggan_id").value = detail.pelanggan_id || "";
     document.getElementById("project_number").value = detail.project_number || detail.nomor_project || "";
     document.getElementById("po_number").value = detail.po_number || "";
-    document.getElementById("vendor").value = detail.vendor || detail.supplier || "";
+    
+    // load vendors and set current vendor
+    if (detail.project_id) {
+      await loadVendorsForProject(detail.project_id);
+    }
+    
+    // set vendor value after field is created
+    const vendorField = document.getElementById("vendor");
+    if (vendorField) {
+      if (vendorField.tagName === 'SELECT') {
+        vendorField.value = detail.vendor || detail.supplier || "";
+      } else {
+        vendorField.value = detail.vendor || detail.supplier || "";
+      }
+    }
 
     let amount = detail.contract_amount || detail.project_amount || 0;
     document.getElementById("project_amount").value = finance(amount);
