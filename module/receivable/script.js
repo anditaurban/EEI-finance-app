@@ -3,6 +3,11 @@ colSpanCount = 9;
 setDataType("account_receivable");
 fetchAndUpdateData();
 
+console.log("=== Receivable Module Loaded ===");
+console.log("Current data type:", currentDataType);
+console.log("Owner ID:", owner_id);
+console.log("User ID:", user_id);
+
 function loadSummary(dataSummary) {
   console.log("Data Summary:", dataSummary);
 
@@ -44,6 +49,8 @@ function loadSummary(dataSummary) {
 window.rowTemplate = function (item, index, perPage = 10) {
   const { currentPage } = state[currentDataType];
   const globalIndex = (currentPage - 1) * perPage + index + 1;
+
+  console.log(`Rendering row ${globalIndex}:`, item);
 
   // --- LOGIKA WARNA STATUS ---
   let statusBadgeClass = "";
