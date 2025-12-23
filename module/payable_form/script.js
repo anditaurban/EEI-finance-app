@@ -304,6 +304,11 @@ async function loadVendorsForProject(projectId) {
       return;
     }
     
+    // if project_number input is empty, fill it from matching project
+    if (!projectNumber && matchingProject.project_number) {
+      document.getElementById('project_number').value = matchingProject.project_number;
+    }
+
     const vendors = matchingProject.vendor_detail || [];
     console.log('Vendors Count:', vendors.length);
     console.log('Vendors:', vendors);
@@ -644,7 +649,7 @@ async function loadDetail(Id, Detail) {
     // mapping info project
     document.getElementById("projectInput").value = detail.project_name || detail.nama_project || "";
     document.getElementById("project_id").value = detail.project_id || detail.id_project || "";
-    document.getElementById("project_number").value = detail.project_number || detail.nomor_project || "";
+    document.getElementById("project_number").value = detail.project_number || "";
     document.getElementById("po_number").value = detail.po_number || "";
     
     // load vendors and set current vendor
