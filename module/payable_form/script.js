@@ -171,7 +171,7 @@ function setupProjectSearch() {
 
     searchTimeout = setTimeout(async () => {
       try {
-        const url = `${baseUrl}/table/project_won/${owner_id}/1?search=${encodeURIComponent(query)}`;
+        const url = `${baseUrl}/table/project_vendor/${owner_id}/1?search=${encodeURIComponent(query)}`;
         const response = await fetch(url, {
           headers: { Authorization: `Bearer ${API_TOKEN}` },
         });
@@ -485,8 +485,7 @@ function getDataPayload() {
     pph_nominal: pphEnabled ? unfinance(getVal("pph_nominal")) : 0,
     total_inv_tax: unfinance(getVal("total_after_tax")),
 
-    description: getVal("description"),
-    detail_inv: window.detail_desc || getVal("description") || "",
+    detail_inv: getVal("detail_inv") || window.detail_desc || "",
   };
 
   console.log("=== PAYABLE FORM PAYLOAD PREVIEW ===", {
@@ -659,7 +658,7 @@ async function loadDetail(Id, Detail) {
 
     let amount = detail.contract_amount || detail.project_amount || 0;
     document.getElementById("project_amount").value = finance(amount);
-    document.getElementById("description").value = detail.description || "";
+    document.getElementById("detail_inv").value = detail.detail_inv || detail.description || "";
 
     // mapping tanggal & no inv
     document.getElementById("invoice_date").value = detail.inv_date || "";
