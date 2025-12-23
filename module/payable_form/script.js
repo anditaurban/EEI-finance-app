@@ -350,6 +350,18 @@ function setupVendorField(vendors) {
       option.dataset.contractAmount = vendor.contract_amount || 0;
       select.appendChild(option);
     });
+
+    // keep vendor_id in select dataset for easy access
+    select.addEventListener('change', () => {
+      const selectedOpt = select.options[select.selectedIndex];
+      select.dataset.vendorId = selectedOpt?.dataset?.vendorId || '';
+      select.dataset.contractAmount = selectedOpt?.dataset?.contractAmount || 0;
+      console.log('Vendor selected:', {
+        vendor: select.value,
+        vendor_id: select.dataset.vendorId,
+        contract_amount: select.dataset.contractAmount
+      });
+    });
     
     container.appendChild(select);
   } else if (vendors.length === 1) {
@@ -442,9 +454,19 @@ function getDataPayload() {
     owner_id,
     user_id,
     project_id: getVal("project_id"),
+    project_name: getVal("projectInput"),
     pelanggan_id: getVal("pelanggan_id"),
     project_number: getVal("project_number"),
     vendor: getVal("vendor"),
+    vendor_id: (() => {
+      const vendorEl = document.getElementById("vendor");
+      if (!vendorEl) return "";
+      if (vendorEl.tagName === "SELECT") {
+        const opt = vendorEl.options[vendorEl.selectedIndex];
+        return opt?.dataset?.vendorId || "";
+      }
+      return vendorEl.dataset?.vendorId || "";
+    })(),
     po_number: getVal("po_number"),
     inv_number: getVal("invoice_number"),
     inv_date: getVal("invoice_date"),
@@ -464,8 +486,14 @@ function getDataPayload() {
     total_inv_tax: unfinance(getVal("total_after_tax")),
 
     description: getVal("description"),
-    detail_inv: window.detail_desc || "",
+    detail_inv: window.detail_desc || getVal("description") || "",
   };
+
+  console.log("=== PAYABLE FORM PAYLOAD PREVIEW ===", {
+    ...payload,
+    vendor_contract_amount:
+      document.getElementById("vendor")?.dataset?.contractAmount || 0,
+  });
 
   if (!payload.project_id) {
     Swal.fire("Warning", "Project belum dipilih!", "warning");
