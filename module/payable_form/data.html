@@ -1,6 +1,5 @@
 <div class="bg-white p-6">
   <section class="section">
-
     <div class="flex flex-wrap items-start justify-between mb-6 gap-4">
       <div>
         <h1 id="formTitle" class="text-2xl font-bold mb-1">PAYABLE FORM</h1>
@@ -38,13 +37,18 @@
             <input type="text" id="projectInput" name="projectInput"
               class="flex-1 border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
               placeholder="Ketik nama project..." autocomplete="off" />
-
             <input type="hidden" id="project_id" name="project_id">
-            <input type="hidden" id="pelanggan_id" name="pelanggan_id">
           </div>
           <ul id="projectSuggestions"
             class="absolute z-10 bg-white border border-gray-300 w-full md:w-[calc(100%-10rem)] right-0 mt-1 rounded shadow-lg max-h-60 overflow-y-auto hidden">
           </ul>
+        </div>
+
+        <div class="mb-4 flex items-center" data-vendor-container>
+          <label class="w-40 font-medium">Vendor/Supplier</label>
+          <input type="text" id="vendor" name="vendor"
+            class="flex-1 border border-gray-300 rounded px-3 py-2 focus:ring-2 focus:ring-blue-500"
+            placeholder="Nama vendor/supplier...">
         </div>
 
         <div class="mb-4 flex items-center">
@@ -65,16 +69,9 @@
             class="flex-1 border border-yellow-400 bg-yellow-50 rounded px-3 py-2 text-right font-bold" readonly>
         </div>
 
-        <div class="mb-4 flex items-center" data-vendor-container>
-          <label class="w-40 font-medium">Vendor/Supplier</label>
-          <input type="text" id="vendor" name="vendor"
-            class="flex-1 border border-gray-300 rounded px-3 py-2 focus:ring-2 focus:ring-blue-500"
-            placeholder="Nama vendor/supplier...">
-        </div>
-
         <div class="mb-4 flex items-start">
           <label class="w-40 font-medium mt-2">Description <span class="text-red-500">*</span></label>
-          <textarea id="detail_inv" name="detail_inv" rows="2"
+          <textarea id="description" name="description" rows="2"
             class="flex-1 border border-gray-300 rounded px-3 py-2 focus:ring-2 focus:ring-blue-500"></textarea>
         </div>
       </div>

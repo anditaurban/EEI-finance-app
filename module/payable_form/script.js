@@ -186,7 +186,7 @@ function setupProjectSearch() {
             li.className = "px-4 py-2 hover:bg-blue-100 cursor-pointer border-b text-sm";
             li.innerHTML = `
               <div class="font-bold text-gray-800">${proj.project_name}</div>
-              <div class="text-xs text-gray-500">${proj.pelanggan_nama || "-"} | No: ${proj.project_number || "-"}</div>
+              <div class="text-xs text-gray-500">No: ${proj.project_number || "-"}</div>
             `;
             li.onclick = () => selectProject(proj);
             suggestionsBox.appendChild(li);
@@ -211,7 +211,6 @@ function setupProjectSearch() {
 async function selectProject(data) {
   document.getElementById("projectInput").value = data.project_name || "";
   document.getElementById("project_id").value = data.project_id || "";
-  document.getElementById("pelanggan_id").value = data.pelanggan_id || "";
   document.getElementById("project_number").value = data.project_number || "";
 
   let poValue = data.po_number;
@@ -220,7 +219,7 @@ async function selectProject(data) {
     poValue = `PO-${dateStr}`;
   }
   document.getElementById("po_number").value = poValue;
-  document.getElementById("project_amount").value = finance(data.contract_amount);
+  document.getElementById("project_amount").value = finance(0);
 
   document.getElementById("projectSuggestions").classList.add("hidden");
   document.getElementById("currency").value = "IDR";
@@ -356,6 +355,8 @@ function setupVendorField(vendors) {
       const selectedOpt = select.options[select.selectedIndex];
       select.dataset.vendorId = selectedOpt?.dataset?.vendorId || '';
       select.dataset.contractAmount = selectedOpt?.dataset?.contractAmount || 0;
+      const amt = unfinance(select.dataset.contractAmount || 0);
+      document.getElementById('project_amount').value = finance(amt);
       console.log('Vendor selected:', {
         vendor: select.value,
         vendor_id: select.dataset.vendorId,
@@ -377,6 +378,8 @@ function setupVendorField(vendors) {
     input.dataset.vendorId = vendors[0].vendor_id || '';
     input.dataset.contractAmount = vendors[0].contract_amount || 0;
     
+    const amt = unfinance(input.dataset.contractAmount || 0);
+    document.getElementById('project_amount').value = finance(amt);
     container.appendChild(input);
   } else {
     console.log('Creating manual input field (no vendors)');
@@ -388,6 +391,7 @@ function setupVendorField(vendors) {
     input.placeholder = 'Nama vendor/supplier...';
     input.className = 'flex-1 border border-gray-300 rounded px-3 py-2 focus:ring-2 focus:ring-blue-500';
     
+    document.getElementById('project_amount').value = finance(0);
     container.appendChild(input);
   }
 }
@@ -455,7 +459,6 @@ function getDataPayload() {
     user_id,
     project_id: getVal("project_id"),
     project_name: getVal("projectInput"),
-    pelanggan_id: getVal("pelanggan_id"),
     project_number: getVal("project_number"),
     vendor: getVal("vendor"),
     vendor_id: (() => {
@@ -485,7 +488,7 @@ function getDataPayload() {
     pph_nominal: pphEnabled ? unfinance(getVal("pph_nominal")) : 0,
     total_inv_tax: unfinance(getVal("total_after_tax")),
 
-    detail_inv: getVal("detail_inv") || window.detail_desc || "",
+    description: getVal("description") || window.detail_desc || "",
   };
 
   console.log("=== PAYABLE FORM PAYLOAD PREVIEW ===", {
@@ -637,7 +640,6 @@ async function loadDetail(Id, Detail) {
     // mapping info project
     document.getElementById("projectInput").value = detail.project_name || "";
     document.getElementById("project_id").value = detail.project_id || "";
-    document.getElementById("pelanggan_id").value = detail.pelanggan_id || "";
     document.getElementById("project_number").value = detail.project_number || detail.nomor_project || "";
     document.getElementById("po_number").value = detail.po_number || "";
     
@@ -646,19 +648,42 @@ async function loadDetail(Id, Detail) {
       await loadVendorsForProject(detail.project_id);
     }
     
-    // set vendor value after field is created
+    // set vendor value after field is created, prefer vendor_id for matching
     const vendorField = document.getElementById("vendor");
     if (vendorField) {
       if (vendorField.tagName === 'SELECT') {
-        vendorField.value = detail.vendor || detail.supplier || "";
+        const vendorId = (detail.vendor_id || detail.vendorid || "").toString();
+        let matched = false;
+        if (vendorId) {
+          const opt = Array.from(vendorField.options).find(o => (o.dataset.vendorId || "").toString() === vendorId);
+          if (opt) {
+            vendorField.value = opt.value;
+            vendorField.dataset.vendorId = opt.dataset.vendorId || "";
+            vendorField.dataset.contractAmount = opt.dataset.contractAmount || 0;
+            document.getElementById("project_amount").value = finance(unfinance(opt.dataset.contractAmount || 0));
+            matched = true;
+          }
+        }
+        if (!matched) {
+          vendorField.value = detail.vendor || detail.supplier || "";
+          const opt = vendorField.options[vendorField.selectedIndex];
+          vendorField.dataset.vendorId = opt?.dataset?.vendorId || "";
+          vendorField.dataset.contractAmount = opt?.dataset?.contractAmount || 0;
+          document.getElementById("project_amount").value = finance(unfinance(opt?.dataset?.contractAmount || detail.contract_amount || 0));
+        }
       } else {
         vendorField.value = detail.vendor || detail.supplier || "";
+        const amt = unfinance(vendorField.dataset.contractAmount || detail.contract_amount || 0);
+        document.getElementById("project_amount").value = finance(amt);
       }
     }
 
-    let amount = detail.contract_amount || detail.project_amount || 0;
-    document.getElementById("project_amount").value = finance(amount);
-    document.getElementById("detail_inv").value = detail.detail_inv || detail.description || "";
+    // fallback if vendor not set
+    if (!document.getElementById("project_amount").value) {
+      document.getElementById("project_amount").value = finance(detail.contract_amount || 0);
+    }
+
+    document.getElementById("description").value = detail.description || detail.description || "";
 
     // mapping tanggal & no inv
     document.getElementById("invoice_date").value = detail.inv_date || "";
