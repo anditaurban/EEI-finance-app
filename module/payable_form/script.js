@@ -176,7 +176,7 @@ function setupProjectSearch() {
           headers: { Authorization: `Bearer ${API_TOKEN}` },
         });
         const result = await response.json();
-        const projects = result.tableData || [];
+        const projects = result.tableData || result.data || [];
 
         suggestionsBox.innerHTML = "";
         if (projects.length > 0) {
@@ -633,13 +633,17 @@ async function loadDetail(Id, Detail) {
       { headers: { Authorization: `Bearer ${API_TOKEN}` } }
     );
     const result = await res.json();
-    const detail = result.detail || result;
+    let detail = result?.detail || result?.data?.detail || result?.data || result;
+    // handle API returning array of detail
+    if (Array.isArray(detail)) {
+      detail = detail[0] || {};
+    }
 
     console.log("Detail data:", detail);
 
     // mapping info project
-    document.getElementById("projectInput").value = detail.project_name || "";
-    document.getElementById("project_id").value = detail.project_id || "";
+    document.getElementById("projectInput").value = detail.project_name || detail.nama_project || "";
+    document.getElementById("project_id").value = detail.project_id || detail.id_project || "";
     document.getElementById("project_number").value = detail.project_number || detail.nomor_project || "";
     document.getElementById("po_number").value = detail.po_number || "";
     
@@ -652,7 +656,7 @@ async function loadDetail(Id, Detail) {
     const vendorField = document.getElementById("vendor");
     if (vendorField) {
       if (vendorField.tagName === 'SELECT') {
-        const vendorId = (detail.vendor_id || detail.vendorid || "").toString();
+        const vendorId = (detail.vendor_id || detail.vendorid || detail.id_vendor || "").toString();
         let matched = false;
         if (vendorId) {
           const opt = Array.from(vendorField.options).find(o => (o.dataset.vendorId || "").toString() === vendorId);
@@ -683,7 +687,7 @@ async function loadDetail(Id, Detail) {
       document.getElementById("project_amount").value = finance(detail.contract_amount || 0);
     }
 
-    document.getElementById("description").value = detail.description || detail.description || "";
+    document.getElementById("description").value = detail.detail_inv || detail.description || "";
 
     // mapping tanggal & no inv
     document.getElementById("invoice_date").value = detail.inv_date || "";
