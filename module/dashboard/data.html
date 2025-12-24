@@ -1,51 +1,78 @@
-<div class="bg-white dark:bg-gray-900 p-6 rounded-lg shadow">
-  <section class="space-y-6">
-
+<div class="bg-white min-h-screen p-0 m-0">
+  <section class="max-w-6xl mx-auto py-8 px-4">
     <!-- Header -->
-    <div class="flex flex-wrap items-start justify-between gap-4 mb-4">
+    <div class="flex flex-wrap items-center justify-between mb-8 border-b pb-4">
       <div>
-        <h1 id="formTitle" class="text-2xl font-bold mb-1">DASHBOARD</h1>
-        <nav class="text-gray-500 text-sm flex items-center flex-wrap gap-1">
+        <h1 id="formTitle" class="text-3xl font-bold text-blue-900 mb-1 tracking-tight">Dashboard</h1>
+        <nav class="text-gray-400 text-sm flex items-center gap-1">
           <span>Home</span>
         </nav>
       </div>
+      <div class="text-right">
+        <span class="inline-block bg-blue-100 text-blue-900 px-3 py-1 rounded-full text-xs font-semibold">24 December 2025</span>
+      </div>
     </div>
 
-        <!-- Welcome Message -->
-    <div class="bg-blue-900/90 text-white backdrop-blur rounded-xl shadow p-6">
-      <h1 class="text-3xl font-bold">WELCOME BACK FARID PATTY</h1>
-      <p class="mt-2 text-gray-200">Let’s make today productive</p>
+    <!-- Welcome Card -->
+    <div class="rounded-2xl shadow bg-gradient-to-r from-blue-800 to-blue-600 text-white p-8 mb-8 flex flex-col md:flex-row md:items-center md:justify-between">
+      <div>
+        <h2 class="text-2xl md:text-3xl font-bold mb-2">Welcome back, <span class="text-yellow-300">Farid Patty</span>!</h2>
+        <p class="text-gray-100 text-base md:text-lg">Let’s make today productive and impactful.</p>
+      </div>
+      <div class="mt-4 md:mt-0">
+        <span class="inline-block bg-white/20 px-4 py-2 rounded-lg text-lg font-semibold tracking-wide">EEI Finance App</span>
+      </div>
     </div>
 
-        <!-- Announcement & Working Progress -->
+    <!-- Info Grid -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-      <!-- Pengumuman -->
-      <div class="md:col-span-2 text-white bg-blue-900/90 backdrop-blur rounded-xl shadow p-6">
-        <h2 class="text-xl font-semibold mb-3">📢 Pengumuman</h2>
-        <ul class="list-disc ml-5 text-sm space-y-1">
-          <li><strong>Judul:</strong> PENGUMUMAN LIBUR KANTOR</li>
-          <li><strong>Isi:</strong></li>
-        </ul>
-        <p class="mt-3 text-sm leading-relaxed">
-          Kepada Seluruh Karyawan PT [Nama Perusahaan],<br>
-          Sehubungan dengan penetapan Cuti Bersama Hari Raya Idul Adha 1446 H, diberitahukan bahwa operasional kantor akan diliburkan pada <em>[Tanggal Mulai]</em> hingga <em>[Tanggal Selesai]</em>.<br><br>
-          Seluruh kegiatan akan kembali normal pada <em>[Tanggal Buka Kembali]</em>.<br><br>
-          Bagi divisi yang memiliki kebutuhan operasional mendesak, mohon berkoordinasi dengan atasan langsung.<br><br>
-          Demikian informasi ini disampaikan untuk menjadi perhatian.<br>
-          Terima kasih atas kerja samanya.
+      <!-- Announcements -->
+      <div class="md:col-span-2 bg-white border border-blue-100 rounded-2xl shadow p-6">
+        <h2 class="text-xl font-semibold text-blue-900 mb-3 flex items-center gap-2">📢 Announcements</h2>
+        <div class="mb-2">
+          <div class="font-bold text-blue-800">Office Holiday Notice</div>
+          <div class="text-xs text-gray-500 mb-1">Idul Adha 1446 H</div>
+        </div>
+        <p class="text-gray-700 text-sm leading-relaxed">
+          Dear Employees of PT [Company Name],<br>
+          In observance of the collective leave for Idul Adha 1446 H, office operations will be closed from <span class="font-semibold text-blue-700">[Start Date]</span> to <span class="font-semibold text-blue-700">[End Date]</span>.<br><br>
+          Activities will resume as normal on <span class="font-semibold text-blue-700">[Resume Date]</span>.<br><br>
+          For urgent operational needs, please coordinate with your direct supervisor.<br><br>
+          Thank you for your attention and cooperation.
         </p>
       </div>
 
-      <!-- Working Progress -->
-      <div class="bg-blue-900/90 text-white backdrop-blur rounded-xl shadow p-6">
-        <h2 class="text-xl font-semibold mb-3">🛠️ Working Progress</h2>
-        <ul class="list-disc ml-5 text-sm space-y-1">
-          <li>Pengadaan CT Metering Bakaru</li>
-          <li>Preventive maintenance CGK 065</li>
-          <li>Pemasangan Scada Gateway Lombok</li>
+      <!-- Progress & Quick Stats -->
+      <div class="bg-white border border-blue-100 rounded-2xl shadow p-6 flex flex-col gap-4">
+        <h2 class="text-xl font-semibold text-blue-900 mb-3 flex items-center gap-2">🛠️ Working Progress</h2>
+        <ul class="list-disc ml-5 text-sm text-gray-700 space-y-1">
+          <li>Procurement of CT Metering Bakaru</li>
+          <li>Preventive Maintenance CGK 065</li>
+          <li>Installation of Scada Gateway Lombok</li>
         </ul>
+        <div class="mt-4">
+          <h3 class="text-base font-semibold text-blue-800 mb-2">Quick Stats</h3>
+          <div class="grid grid-cols-2 gap-2">
+            <div class="bg-blue-50 rounded-lg p-3 text-center">
+              <div id="stat-active-projects" class="text-2xl font-bold text-blue-900">-</div>
+              <div class="text-xs text-gray-500">Active Projects</div>
+            </div>
+            <div class="bg-blue-50 rounded-lg p-3 text-center">
+              <div id="stat-ongoing-tasks" class="text-2xl font-bold text-blue-900">-</div>
+              <div class="text-xs text-gray-500">Ongoing Tasks</div>
+            </div>
+            <div class="bg-blue-50 rounded-lg p-3 text-center">
+              <div id="stat-pending-approvals" class="text-2xl font-bold text-blue-900">-</div>
+              <div class="text-xs text-gray-500">Pending Approvals</div>
+            </div>
+            <div class="bg-blue-50 rounded-lg p-3 text-center">
+              <div id="stat-new-announcements" class="text-2xl font-bold text-blue-900">-</div>
+              <div class="text-xs text-gray-500">New Announcements</div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
-
   </section>
+<script src="/module/dashboard/script.js"></script>
 </div>
