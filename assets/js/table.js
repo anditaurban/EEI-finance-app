@@ -467,8 +467,19 @@ function handleDelete(id) {
 }
 
 function handleDeleteResponse(data) {
-    const message = data.data.message;
-    const isSuccess = message === "Data successfully deleted";
+    let message = '';
+    let isSuccess = false;
+    if (data && data.data && typeof data.data.message === 'string') {
+        message = data.data.message;
+        isSuccess = /deleted/i.test(message);
+    } else if (data && typeof data.message === 'string') {
+        message = data.message;
+        isSuccess = /deleted/i.test(message);
+    } else {
+        // If no message but no error, treat as success
+        message = 'Data deleted.';
+        isSuccess = true;
+    }
     setTimeout(() => {
         Swal.fire({
             icon: isSuccess ? 'success' : 'error',
@@ -477,7 +488,7 @@ function handleDeleteResponse(data) {
         }).then(() => {
             fetchAndUpdateData(detail_id);
         });
-}, 500);
+    }, 500);
 }
 
 

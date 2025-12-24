@@ -401,6 +401,39 @@ function setupVendorField(vendors) {
   }
 }
 
+// delete function for payable (if exists)
+async function deleteData(id) {
+  console.log('=== DELETE PAYABLE ===');
+  console.log('Delete ID:', id);
+  const url = `${baseUrl}/delete/account_payable/${id}`;
+  console.log('Request URL:', url);
+  try {
+    const response = await fetch(url, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${API_TOKEN}`
+      }
+    });
+    const responseText = await response.text();
+    console.log('Response Status:', response.status);
+    console.log('Response Body:', responseText);
+    let result;
+    try {
+      result = JSON.parse(responseText);
+    } catch (e) {
+      throw new Error(`Server error: ${responseText}`);
+    }
+    if (result.status === 'success' || (result.data && result.data.id)) {
+      Swal.fire('Berhasil', 'Data berhasil dihapus.', 'success');
+      loadModuleContent('payable');
+    } else {
+      throw new Error(result.message || 'Gagal menghapus data.');
+    }
+  } catch (error) {
+    console.error(error);
+    Swal.fire('Error', error.message, 'error');
+  }
+}
 async function generateInvoiceNumber() {
   const projectNumber = document.getElementById('project_number').value;
   const invDate = document.getElementById('invoice_date').value;
