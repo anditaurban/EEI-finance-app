@@ -1,6 +1,3 @@
-
-
-
 // Fetch active project count from API
 async function fetchDashboardStats() {
 	let activeProjects = 0;
@@ -46,17 +43,32 @@ function updateDashboardStats(stats) {
 }
 
 
+// Insert user's name into dashboard welcome card
+function updateDashboardUserName() {
+  let userData = {};
+  try {
+    userData = JSON.parse(localStorage.getItem('user')) || {};
+  } catch (e) {
+    userData = {};
+  }
+  const nama = (typeof userData.nama === 'string' && userData.nama.trim() !== '') ? userData.nama : 'User';
+  const welcomeNameSpan = document.querySelector('.welcome-dashboard-nama');
+  if (welcomeNameSpan) welcomeNameSpan.textContent = nama;
+}
+
 // Wait for stat elements to exist before running stats update
 function waitForStatsAndRun() {
-	const elActive = document.getElementById('stat-active-projects');
-	const elOngoing = document.getElementById('stat-ongoing-tasks');
-	const elPending = document.getElementById('stat-pending-approvals');
-	const elAnnouncements = document.getElementById('stat-new-announcements');
-	if (elActive && elOngoing && elPending && elAnnouncements) {
-		fetchDashboardStats().then(updateDashboardStats);
-	} else {
-		setTimeout(waitForStatsAndRun, 50);
-	}
+  const elActive = document.getElementById('stat-active-projects');
+  const elOngoing = document.getElementById('stat-ongoing-tasks');
+  const elPending = document.getElementById('stat-pending-approvals');
+  const elAnnouncements = document.getElementById('stat-new-announcements');
+  const welcomeNameSpan = document.querySelector('.welcome-dashboard-nama');
+  if (elActive && elOngoing && elPending && elAnnouncements && welcomeNameSpan) {
+    updateDashboardUserName();
+    fetchDashboardStats().then(updateDashboardStats);
+  } else {
+    setTimeout(waitForStatsAndRun, 50);
+  }
 }
 
 waitForStatsAndRun();
