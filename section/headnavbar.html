@@ -21,7 +21,14 @@
 
   <!-- Right Section -->
   <div class="flex items-center gap-4">
-    
+    <!-- Theme Toggle Button (Desktop) -->
+    <button id="toggleTheme" class="hidden md:inline-flex items-center gap-1 px-3 py-2 rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-100 transition" title="Toggle Light/Dark Mode">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m8.66-8.66l-.71.71M4.05 4.05l-.71.71M21 12h-1M4 12H3m16.24 4.24l-.71-.71M6.34 19.66l-.71-.71" />
+      </svg>
+      <span class="text-xs">Theme</span>
+    </button>
+
     <!-- API Status -->
     <div id="apiStatus" class="relative">
       <button id="apiIndicatorToggle" 
@@ -40,7 +47,7 @@
     <div class="relative hidden md:block">
       <button id="userDropdownToggle" 
         class="flex items-center gap-2 text-sm font-medium text-gray-700 hover:text-blue-600 transition">
-        <img src="./assets/img/user_icon.png" alt="User" class="w-6 h-6 rounded-full border border-gray-300">
+        <span id="userAvatar" class="w-6 h-6 rounded-full border border-gray-300 bg-gray-200 flex items-center justify-center text-gray-500 font-bold">A</span>
         <span id="nameUser">Admin</span>
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
@@ -63,6 +70,10 @@
       <button id="mobileMenuToggle" class="text-2xl text-gray-600">☰</button>
       <div id="mobileMenuDropdown" 
         class="hidden absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-md z-50 overflow-hidden">
+        <div class="flex items-center gap-2 px-4 py-2">
+          <span id="mobileUserAvatar" class="w-6 h-6 rounded-full border border-gray-300 bg-gray-200 flex items-center justify-center text-gray-500 font-bold">A</span>
+          <span id="mobileNameUser">Admin</span>
+        </div>
         <button id="mobileUserToggle" 
           class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
           👤 Akun
@@ -75,3 +86,10 @@
     </div>
   </div>
 </header>
+
+<script>
+  // After navbar HTML is injected, call this:
+  if (window.updateNavbarUserInfo) {
+    window.updateNavbarUserInfo();
+  }
+</script>

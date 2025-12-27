@@ -60,10 +60,12 @@ function collapseSidebar() {
     document.body.classList.toggle('dark');
     document.body.classList.toggle('bg-gray-900');
   
-    document.querySelectorAll('header, main, aside, footer, #mainCard, #userDisplay, #dynamicModule')
+
+    // Also toggle for main module containers
+    document.querySelectorAll('header, main, aside, footer, #mainCard, #userDisplay, #dynamicModule, .bg-white.dark\\:bg-gray-900')
       .forEach(el => {
         el?.classList.toggle('bg-white');
-        el?.classList.toggle('bg-gray-800');
+        el?.classList.toggle('bg-gray-900');
         el?.classList.toggle('text-gray-900');
         el?.classList.toggle('text-white');
       });
@@ -263,3 +265,29 @@ renderSidebar(userRole);
 // checkApiStatus();
 // setInterval(loadBadge, 1000);
 // setInterval(checkApiStatus, 10000)
+
+function updateNavbarUserInfo() {
+  let userData = {};
+  try {
+    userData = JSON.parse(localStorage.getItem('user')) || {};
+  } catch (e) {
+    userData = {};
+  }
+  console.log('[navbar] userData from localStorage:', userData);
+  const nama = (typeof userData.nama === 'string' && userData.nama.trim() !== '') ? userData.nama : 'Admin';
+  console.log('[navbar] Resolved nama:', nama);
+  const nameUser = document.getElementById('nameUser');
+  const mobileNameUser = document.getElementById('mobileNameUser');
+  if (nameUser) nameUser.textContent = nama;
+  if (mobileNameUser) mobileNameUser.textContent = nama;
+  // Set avatar initial
+  const initial = nama.charAt(0).toUpperCase();
+  console.log('[navbar] Avatar initial:', initial);
+  const userAvatar = document.getElementById('userAvatar');
+  const mobileUserAvatar = document.getElementById('mobileUserAvatar');
+  if (userAvatar) userAvatar.textContent = initial;
+  if (mobileUserAvatar) mobileUserAvatar.textContent = initial;
+}
+
+// Call this after navbar is injected into DOM
+window.updateNavbarUserInfo = updateNavbarUserInfo;

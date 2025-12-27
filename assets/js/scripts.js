@@ -114,10 +114,16 @@ async function loadAppSections() {
     ]);
 
   sectionDataDiv.innerHTML = `${headNavbar}${sideNavbar}${mainContent}${footNavbar}${footer}`;
+  // Ensure navbar user info is updated after injection
+  // Wait for section.js to be loaded before calling updateNavbarUserInfo
+  loadScript(`./assets/js/section.js?v=${new Date().getTime()}`, () => {
+    if (window.updateNavbarUserInfo) {
+      window.updateNavbarUserInfo();
+    }
+  });
   modedev();
   addSideNavListeners();
 
-  loadScript(`./assets/js/section.js?v=${new Date().getTime()}`, () => {});
   loadModuleContent(default_module);
 }
 
