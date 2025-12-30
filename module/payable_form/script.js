@@ -125,7 +125,8 @@ function updateTotalAfterTax() {
   const ppnNominal = unfinance(document.getElementById("ppn_nominal").value);
   const pphNominal = unfinance(document.getElementById("pph_nominal").value);
 
-  const totalAfterTax = totalInv + ppnNominal + pphNominal;
+  // Update formula: Total Invoice + PPN - PPh
+  const totalAfterTax = totalInv + ppnNominal - pphNominal;
   document.getElementById("total_after_tax").value = finance(totalAfterTax);
 }
 
