@@ -1,0 +1,319 @@
+<div id="content" class="bg-gray-50 min-h-screen font-sans text-gray-800 p-4 md:p-6">
+  
+  <div class="max-w-7xl mx-auto">
+
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+      <div>
+        <h1 id="formTitle" class="text-3xl font-bold text-gray-900 tracking-tight">Accounting</h1>
+        <nav class="flex items-center gap-2 text-sm text-gray-500 mt-1">
+          <span class="hover:text-blue-600 cursor-pointer transition">Home</span>
+          <svg class="w-3 h-3 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+          <span class="font-medium text-blue-600">Accounting</span>
+        </nav>
+      </div>
+      
+
+          <div>
+             <button class="bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 px-4 py-2 rounded-lg text-sm font-medium shadow-sm transition flex items-center gap-2">
+               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+               Export Reports
+             </button>
+          </div>
+    </div>
+    
+
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 min-h-[600px] flex flex-col">
+      
+      <div class="px-6 pt-6 pb-0 border-b border-gray-200">
+        
+
+
+        <div class="flex gap-8 overflow-x-auto no-scrollbar">
+          
+          <button onclick="showAccountingTab('ledger', this)" 
+            class="acc-tab active-tab pb-4 text-sm font-semibold text-blue-600 border-b-2 border-blue-600 flex items-center gap-2 whitespace-nowrap transition-colors">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
+            General Ledger
+          </button>
+
+          <button onclick="showAccountingTab('inflow', this)" 
+            class="acc-tab pb-4 text-sm font-medium text-gray-500 border-b-2 border-transparent hover:text-gray-700 hover:border-gray-300 flex items-center gap-2 whitespace-nowrap transition-colors">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
+            Inflow (Funding)
+          </button>
+
+          <button onclick="showAccountingTab('outflow', this)" 
+            class="acc-tab pb-4 text-sm font-medium text-gray-500 border-b-2 border-transparent hover:text-gray-700 hover:border-gray-300 flex items-center gap-2 whitespace-nowrap transition-colors">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6"></path></svg>
+            Outflow (Expenses)
+          </button>
+
+          <button onclick="showAccountingTab('transfer', this)" 
+            class="acc-tab pb-4 text-sm font-medium text-gray-500 border-b-2 border-transparent hover:text-gray-700 hover:border-gray-300 flex items-center gap-2 whitespace-nowrap transition-colors">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path></svg>
+            Transfer Bank
+          </button>
+
+          <button onclick="showAccountingTab('coa', this)" 
+            class="acc-tab pb-4 text-sm font-medium text-gray-500 border-b-2 border-transparent hover:text-gray-700 hover:border-gray-300 flex items-center gap-2 whitespace-nowrap transition-colors">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+            Chart of Accounts
+          </button>
+
+        </div>
+      </div>
+
+      <div class="p-6 bg-gray-50/30 flex-1">
+
+        <div id="ledgerView" class="accounting-view block animate-fade-in">
+          
+          <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+             <div class="flex items-center gap-2 text-gray-700">
+        <div class="relative w-full md:w-96">
+          <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+          </div>
+          <input type="text" id="searchInput" onkeyup="debounceSearch()" placeholder="Search invoice, client, or project..." 
+            class="pl-10 pr-4 py-2 w-full text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition">
+        </div>
+             </div>
+             <div class="flex flex-wrap gap-3">
+                <select id="glAccount" class="border-gray-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500 shadow-sm" onchange="loadLedger()">
+                   <option>Loading Accounts...</option>
+                </select>
+                <input type="month" id="glPeriod" class="border-gray-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500 shadow-sm" onchange="loadLedger()">
+        <div class="relative group">
+          <button id="dropdownFilterButton" onclick="toggleFilterDropdown()" class="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition">
+            <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/></svg>
+            <span id="dropdownFilterLabel">Filter Status</span>
+            <svg class="w-3 h-3 ml-1 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+          </button>
+          
+          <div id="dropdownFilterMenu" class="hidden absolute right-0 mt-2 w-64 bg-white border border-gray-100 rounded-xl shadow-xl z-50 p-2 text-sm animate-fade-in-down">
+             <div class="space-y-1">
+               <button onclick="filterData('')" class="w-full text-left px-3 py-2 rounded-lg hover:bg-gray-100 text-gray-700 font-medium">Show All</button>
+               <div class="h-px bg-gray-100 my-1"></div>
+               <button onclick="filterData('status=2')" class="flex justify-between items-center w-full px-3 py-2 rounded-lg hover:bg-gray-50 text-gray-600">
+                  <span>Menunggu Pembayaran</span> <span id="unpaid" class="bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-xs">0</span>
+               </button>
+               <button onclick="filterData('status=6')" class="flex justify-between items-center w-full px-3 py-2 rounded-lg hover:bg-gray-50 text-gray-600">
+                  <span>Partial Paid</span> <span id="partialpaid" class="bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-xs">0</span>
+               </button>
+               </div>
+           </div>
+        </div>             
+             </div>
+
+          </div>
+
+
+          <div class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+            <div class="overflow-x-auto">
+              <table class="min-w-full text-sm text-left">
+                <thead id="tableHeader" class="bg-gray-50 border-b border-gray-200 text-xs uppercase text-gray-500 font-semibold">
+                  <tr>
+                    <th class="px-6 py-3">Date</th>
+                    <th class="px-6 py-3">Reference</th>
+                    <th class="px-6 py-3 w-[15%]">COA</th>
+                    <th class="px-6 py-3">Description</th>
+                    <th class="px-6 py-3">Debit</th>
+                    <th class="px-6 py-3">Credit</th>
+                  </tr>
+                </thead>
+                <tbody id="tableBody" class="divide-y divide-gray-100 bg-white">
+                  <tr>
+                    <td colspan="6" class="px-6 py-12 text-center text-gray-400">
+                       <div class="flex flex-col items-center justify-center">
+                          <p class="text-sm font-medium">Tidak ada transaksi ditemukan</p>
+                          <p class="text-xs">Silakan pilih akun atau periode lain.</p>
+                       </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+      <div class="px-6 py-4 border-t border-gray-200 bg-gray-50 flex flex-col md:flex-row justify-between items-center gap-4">
+        <div id="pagination" class="flex items-center gap-1">
+        </div>
+      </div>
+          </div>
+        </div>
+
+        <div id="inflowView" class="accounting-view hidden animate-fade-in">
+          
+          <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+             <div>
+                <h2 class="text-lg font-bold text-gray-800">Pendanaan & Investor</h2>
+                <p class="text-xs text-gray-500">Pencatatan modal masuk (Non-Operational Revenue).</p>
+             </div>
+             <div class="flex gap-2">
+                <select id="inflowSource" class="border-gray-300 rounded-lg text-sm shadow-sm" onchange="loadInflow()">
+                  <option value="">Semua Sumber</option>
+                  <option value="investor">Investor</option>
+                  <option value="funding">Pendanaan</option>
+                </select>
+                <button onclick="openInflowForm()" class="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-medium shadow-sm transition">
+                   + Tambah Inflow
+                </button>
+             </div>
+          </div>
+
+          <div class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+             <div class="overflow-x-auto">
+               <table class="min-w-full text-sm text-left">
+                  <thead class="bg-gray-50 border-b border-gray-200 text-xs uppercase text-gray-500 font-semibold">
+                     <tr>
+                        <th class="px-6 py-3">Tanggal</th>
+                        <th class="px-6 py-3">Sumber</th>
+                        <th class="px-6 py-3">Masuk Ke Akun</th>
+                        <th class="px-6 py-3">Keterangan</th>
+                        <th class="px-6 py-3 text-right">Nominal</th>
+                        <th class="px-6 py-3 text-center w-24">Aksi</th>
+                     </tr>
+                  </thead>
+                  <tbody id="inflowBody" class="divide-y divide-gray-100 bg-white"></tbody>
+               </table>
+             </div>
+          </div>
+        </div>
+
+        <div id="outflowView" class="accounting-view hidden animate-fade-in">
+           <div class="mb-6">
+             <h2 class="text-lg font-bold text-gray-800">Rekap Pengeluaran (Expenses)</h2>
+             <p class="text-xs text-gray-500">Monitoring pengeluaran per kategori secara bulanan.</p>
+           </div>
+
+           <div class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+             <div class="overflow-x-auto">
+               <table class="min-w-max text-sm text-left border-collapse">
+                 <thead class="bg-gray-50 border-b border-gray-200 text-xs uppercase text-gray-500 font-semibold">
+                   <tr>
+                     <th class="px-4 py-3 sticky left-0 bg-gray-50 z-10 border-r border-gray-200 shadow-sm">Kategori</th>
+                     <th class="px-4 py-3 text-center min-w-[80px]">Jan</th>
+                     <th class="px-4 py-3 text-center min-w-[80px]">Feb</th>
+                     <th class="px-4 py-3 text-center min-w-[80px]">Mar</th>
+                     <th class="px-4 py-3 text-center min-w-[80px]">Apr</th>
+                     <th class="px-4 py-3 text-center min-w-[80px]">May</th>
+                     <th class="px-4 py-3 text-center min-w-[80px]">Jun</th>
+                     <th class="px-4 py-3 text-center min-w-[80px]">Jul</th>
+                     <th class="px-4 py-3 text-center min-w-[80px]">Aug</th>
+                     <th class="px-4 py-3 text-center min-w-[80px]">Sep</th>
+                     <th class="px-4 py-3 text-center min-w-[80px]">Oct</th>
+                     <th class="px-4 py-3 text-center min-w-[80px]">Nov</th>
+                     <th class="px-4 py-3 text-center min-w-[80px]">Dec</th>
+                     <th class="px-4 py-3 text-right min-w-[100px] bg-gray-50 font-bold">Total</th>
+                   </tr>
+                 </thead>
+                 <tbody id="outflowBody" class="divide-y divide-gray-100 bg-white">
+                    <tr class="hover:bg-gray-50">
+                       <td class="px-4 py-3 font-medium text-gray-700 sticky left-0 bg-white z-10 border-r border-gray-100">Operational Cost</td>
+                       <td class="px-4 py-3 text-right text-gray-400">-</td>
+                       <td class="px-4 py-3 text-right text-gray-400">-</td>
+                    </tr>
+                 </tbody>
+               </table>
+             </div>
+           </div>
+        </div>
+
+        <div id="transferView" class="accounting-view hidden animate-fade-in">
+           <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
+              <div>
+                 <h2 class="text-lg font-bold text-gray-800">Mutasi Internal</h2>
+                 <p class="text-xs text-gray-500">Pindah buku antar rekening bank perusahaan.</p>
+              </div>
+              <button onclick="openTransferForm()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium shadow-sm transition flex items-center gap-2">
+                 Transfer Dana
+              </button>
+           </div>
+
+           <div class="bg-blue-50 border border-blue-100 text-blue-700 px-4 py-3 rounded-lg text-sm mb-6 flex gap-3">
+              <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+              <div>
+                 <p class="font-semibold">Catatan Akuntansi:</p>
+                 <p class="opacity-90">Mutasi ini tidak mempengaruhi Laba/Rugi. Bank Pengirim (Kredit) -> Bank Penerima (Debit).</p>
+              </div>
+           </div>
+
+           <div class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+               <div class="overflow-x-auto">
+                   <table class="min-w-full text-sm text-left">
+                      <thead class="bg-gray-50 border-b border-gray-200 text-xs uppercase text-gray-500 font-semibold">
+                         <tr>
+                            <th class="px-6 py-3">Tanggal</th>
+                            <th class="px-6 py-3 text-center">Mutasi</th> 
+                            <th class="px-6 py-3 text-right">Nominal</th>
+                            <th class="px-6 py-3">Keterangan</th>
+                            <th class="px-6 py-3 text-center w-24">Aksi</th>
+                         </tr>
+                      </thead>
+                      <tbody id="transferBody" class="divide-y divide-gray-100 bg-white"></tbody>
+                   </table>
+                </div>
+           </div>
+        </div>
+
+        <div id="coaView" class="accounting-view hidden animate-fade-in">
+           <div class="flex justify-between items-center mb-6">
+              <div>
+                 <h2 class="text-lg font-bold text-gray-800">Chart of Accounts (COA)</h2>
+                 <p class="text-xs text-gray-500">Master data akun akuntansi.</p>
+              </div>
+           </div>
+
+           <div class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+               <div class="overflow-x-auto">
+                   <table class="min-w-full text-sm text-left">
+                     <thead class="bg-gray-50 border-b border-gray-200 text-xs uppercase text-gray-500 font-semibold">
+                       <tr>
+                         <th class="px-6 py-3 w-32">Kode</th>
+                         <th class="px-6 py-3">Nama Akun</th>
+                         <th class="px-6 py-3 w-40">Tipe</th>
+                         <th class="px-6 py-3 w-32">Kategori</th>
+                         <th class="px-6 py-3 text-right">Saldo</th>
+                         <th class="px-6 py-3 text-center w-16">Action</th>
+                       </tr>
+                     </thead>
+                     <tbody id="COAtableBody" class="divide-y divide-gray-100 bg-white"></tbody>
+                   </table>
+                   
+                   <div id="pagination" class="bg-gray-50 border-t border-gray-200 p-4"></div>
+               </div>
+           </div>
+        </div>
+
+      </div> </div> </div>
+
+  <div id="coaRowMenu" class="hidden fixed w-40 bg-white border border-gray-200 rounded-lg shadow-xl z-50 py-1 animate-fade-in-down">
+     <button id="coaEditBtn" class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-blue-600 transition flex items-center gap-2">
+        ✏️ Edit
+     </button>
+     <div class="border-t border-gray-100 my-1"></div>
+     <button id="coaDeleteBtn" class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition flex items-center gap-2">
+        🗑 Delete
+     </button>
+  </div>
+
+</div>
+
+<style>
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(5px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .animate-fade-in {
+    animation: fadeIn 0.3s ease-out forwards;
+  }
+  .animate-fade-in-down {
+    animation: fadeIn 0.2s ease-out forwards;
+  }
+  /* Hide scrollbar for tabs */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+  }
+</style>

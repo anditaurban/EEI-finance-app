@@ -1,0 +1,131 @@
+<div id="content" class="bg-gray-50 min-h-screen font-sans text-gray-800 p-4 md:p-6">
+  
+  <div class="max-w-7xl mx-auto">
+    
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+      <div>
+        <h1 id="pageTitle" class="text-3xl font-bold text-gray-900 tracking-tight">Clients</h1>
+        <nav class="flex items-center gap-2 text-sm text-gray-500 mt-1">
+          <span class="hover:text-blue-600 cursor-pointer transition">Home</span>
+          <svg class="w-3 h-3 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+          <span class="font-medium text-blue-600">Client Management</span>
+        </nav>
+      </div>
+      
+      <div class="flex items-center gap-3">
+        <button id="addButton" class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-5 py-2.5 rounded-lg shadow-sm hover:shadow-md transition-all flex items-center gap-2">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+          Add New Client
+        </button>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      
+      <div class="bg-white p-5 rounded-xl border border-gray-100 shadow-sm relative overflow-hidden group hover:shadow-md transition">
+        <div class="absolute top-0 left-0 w-1 h-full bg-blue-500"></div>
+        <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Total Clients</p>
+        <div id="summary_total_clients" class="text-2xl font-bold text-gray-900 font-mono tracking-tight mb-3">124</div>
+        <div class="flex items-center gap-3 text-xs font-medium">
+          <span class="text-green-600 flex items-center gap-1">
+             <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
+             +12 this month
+          </span>
+        </div>
+      </div>
+
+      <div class="bg-white p-5 rounded-xl border border-gray-100 shadow-sm relative overflow-hidden group hover:shadow-md transition">
+        <div class="absolute top-0 left-0 w-1 h-full bg-indigo-400"></div>
+        <div class="flex justify-between items-start">
+          <div>
+            <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Active Projects</p>
+            <div id="summary_active_projects" class="text-xl font-bold text-gray-800 font-mono">45</div>
+          </div>
+          <div class="p-2 bg-indigo-50 rounded-lg text-indigo-600">
+             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-white p-5 rounded-xl border border-gray-100 shadow-sm relative overflow-hidden group hover:shadow-md transition">
+        <div class="absolute top-0 left-0 w-1 h-full bg-orange-400"></div>
+        <div class="flex justify-between items-start">
+          <div>
+            <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Unpaid Invoices</p>
+            <div id="summary_pending_amount" class="text-xl font-bold text-gray-800 font-mono">Rp 450M</div>
+          </div>
+          <div class="p-2 bg-orange-50 rounded-lg text-orange-600">
+             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-emerald-50 p-5 rounded-xl border border-emerald-100 shadow-sm relative overflow-hidden group hover:shadow-md transition">
+        <p class="text-xs font-bold text-emerald-600 uppercase tracking-wider mb-1">Top Client (YTD)</p>
+        <div id="summary_top_client" class="text-lg font-bold text-emerald-700 font-sans tracking-tight truncate">PT Maju Bersama</div>
+        <p class="text-xs text-emerald-600/70 mt-1">Total Revenue: Rp 1.2B</p>
+      </div>
+
+    </div>
+
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+      
+      <div class="p-4 border-b border-gray-100 flex flex-col md:flex-row justify-between items-center gap-4 bg-white">
+        
+        <div class="relative w-full md:w-96">
+          <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+          </div>
+          <input type="text" id="searchInput" onkeyup="debounceSearch()" placeholder="Search client name, email, or company..." 
+            class="pl-10 pr-4 py-2 w-full text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition">
+        </div>
+
+        <div class="relative group">
+          <button id="clientFilterBtn" onclick="toggleClientFilter()" class="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition">
+            <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/></svg>
+            <span id="clientFilterLabel">Filter Category</span>
+            <svg class="w-3 h-3 ml-1 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+          </button>
+          
+          <div id="clientFilterMenu" class="hidden absolute right-0 mt-2 w-56 bg-white border border-gray-100 rounded-xl shadow-xl z-50 p-2 text-sm animate-fade-in-down">
+             <div class="space-y-1">
+               <button onclick="filterClients('')" class="w-full text-left px-3 py-2 rounded-lg hover:bg-gray-100 text-gray-700 font-medium">Show All</button>
+               <div class="h-px bg-gray-100 my-1"></div>
+               <button onclick="filterClients('category=vip')" class="flex justify-between items-center w-full px-3 py-2 rounded-lg hover:bg-gray-50 text-gray-600">
+                  <span>VIP Clients</span>
+               </button>
+               <button onclick="filterClients('category=retail')" class="flex justify-between items-center w-full px-3 py-2 rounded-lg hover:bg-gray-50 text-gray-600">
+                  <span>Retail / Regular</span>
+               </button>
+               <button onclick="filterClients('status=inactive')" class="flex justify-between items-center w-full px-3 py-2 rounded-lg hover:bg-gray-50 text-red-600">
+                  <span>Inactive Clients</span>
+               </button>
+             </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm text-left">
+          <thead class="text-xs text-gray-500 uppercase bg-gray-50 border-b border-gray-200">
+            <tr>
+              <th scope="col" class="px-6 py-3 font-semibold w-64">Company / Client Name</th>
+              <th scope="col" class="px-6 py-3 font-semibold">Contact Info</th>
+              <th scope="col" class="px-6 py-3 font-semibold">Category & Status</th>
+              <th scope="col" class="px-6 py-3 font-semibold text-right">Total Revenue</th>
+              <th scope="col" class="px-6 py-3 font-semibold text-center w-16">Action</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody" class="divide-y divide-gray-100 bg-white"></tbody>
+        </table>
+      </div>
+
+      <div class="px-6 py-4 border-t border-gray-200 bg-gray-50 flex flex-col md:flex-row justify-between items-center gap-4">
+        <div id="pagination" class="flex items-center gap-1">
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+</div>

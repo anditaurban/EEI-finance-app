@@ -1,0 +1,141 @@
+<div id="content" class="bg-gray-50 min-h-screen font-sans text-gray-800 p-4 md:p-6">
+  
+  <div class="max-w-7xl mx-auto">
+    
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+      <div>
+        <h1 id="pageTitle" class="text-3xl font-bold text-gray-900 tracking-tight">Project Recap</h1>
+        <nav class="flex items-center gap-2 text-sm text-gray-500 mt-1">
+          <span class="hover:text-blue-600 cursor-pointer transition">Home</span>
+          <svg class="w-3 h-3 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+          <span class="font-medium text-blue-600">Financial Overview</span>
+        </nav>
+      </div>
+      
+      <div class="flex items-center gap-3">
+        <button onclick="exportProjectRecap()" class="bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 text-sm font-medium px-4 py-2.5 rounded-lg shadow-sm transition flex items-center gap-2">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+          Export Report
+        </button>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+      
+      <div class="bg-white p-5 rounded-xl border border-gray-100 shadow-sm relative overflow-hidden group hover:shadow-md transition">
+        <div class="absolute top-0 left-0 w-1 h-full bg-blue-500"></div>
+        <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Total Project Revenue</p>
+        <div id="summary_total_revenue" class="text-2xl font-bold text-gray-900 font-mono tracking-tight mb-2">Rp 0</div>
+        <div class="text-xs text-blue-600 flex items-center gap-1">
+           <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
+           Gross Income from all projects
+        </div>
+      </div>
+
+      <div class="bg-white p-5 rounded-xl border border-gray-100 shadow-sm relative overflow-hidden group hover:shadow-md transition">
+        <div class="absolute top-0 left-0 w-1 h-full bg-red-500"></div>
+        <div class="flex justify-between items-start">
+          <div>
+            <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Total Cost (HPP & Exp)</p>
+            <div id="summary_total_cost" class="text-2xl font-bold text-gray-800 font-mono mb-2">Rp 0</div>
+             <div class="text-xs text-red-500 flex items-center gap-1">
+               Including material & operational
+            </div>
+          </div>
+          <div class="p-2 bg-red-50 rounded-lg text-red-600">
+             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6 6"/></svg>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-emerald-50 p-5 rounded-xl border border-emerald-100 shadow-sm relative overflow-hidden group hover:shadow-md transition">
+        <div class="flex justify-between items-start">
+            <div>
+                <p class="text-xs font-bold text-emerald-600 uppercase tracking-wider mb-1">Net Profit / Loss</p>
+                <div id="summary_net_profit" class="text-2xl font-bold text-emerald-700 font-mono tracking-tight mb-2">Rp 0</div>
+                <div class="text-xs text-emerald-600/70">
+                   Profit Margin Analysis
+                </div>
+            </div>
+             <div class="p-2 bg-white/50 rounded-lg text-emerald-600">
+                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+             </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+      
+      <div class="p-4 border-b border-gray-100 flex flex-col md:flex-row justify-between items-center gap-4 bg-white">
+        
+        <div class="relative w-full md:w-96">
+          <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+          </div>
+          <input type="text" id="searchInput" onkeyup="debounceSearch()" placeholder="Search project name, client, or ID..." 
+            class="pl-10 pr-4 py-2 w-full text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition">
+        </div>
+
+        <div class="relative group">
+          <button id="filterBtn" onclick="toggleFilterDropdown()" class="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition w-full md:w-auto justify-between">
+            <div class="flex items-center gap-2">
+                <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/></svg>
+                <span id="dropdownFilterLabel">Filter Status</span>
+            </div>
+            <svg class="w-3 h-3 ml-1 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+          </button>
+          
+          <div id="dropdownFilterMenu" class="hidden absolute right-0 mt-2 w-64 bg-white border border-gray-100 rounded-xl shadow-xl z-50 p-2 text-sm animate-fade-in-down">
+             <div class="space-y-1">
+               <button onclick="filterData('')" class="w-full text-left px-3 py-2 rounded-lg hover:bg-gray-100 text-gray-700 font-medium">Show All</button>
+               <div class="h-px bg-gray-100 my-1"></div>
+               
+               <button onclick="filterData('status=2')" class="flex justify-between items-center w-full px-3 py-2 rounded-lg hover:bg-gray-50 text-gray-600">
+                  <span>Menunggu Pembayaran</span> <span id="unpaid" class="bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-xs font-bold">0</span>
+               </button>
+               <button onclick="filterData('status=6')" class="flex justify-between items-center w-full px-3 py-2 rounded-lg hover:bg-gray-50 text-gray-600">
+                  <span>Partial Paid</span> <span id="partialpaid" class="bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-xs font-bold">0</span>
+               </button>
+               <button onclick="filterData('status=1')" class="flex justify-between items-center w-full px-3 py-2 rounded-lg hover:bg-gray-50 text-gray-600">
+                  <span>In Process</span> <span id="process" class="bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-xs font-bold">0</span>
+               </button>
+
+               <div class="h-px bg-gray-100 my-1"></div>
+               
+               <button onclick="filterData('type=1')" class="w-full text-left px-3 py-2 rounded-lg hover:bg-gray-50 text-gray-600">Type: Reguler</button>
+               <button onclick="filterData('type=2')" class="w-full text-left px-3 py-2 rounded-lg hover:bg-gray-50 text-gray-600">Type: COD</button>
+             </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm text-left">
+          <thead class="text-xs text-gray-500 uppercase bg-gray-50 border-b border-gray-200">
+            <tr>
+              <th scope="col" class="px-6 py-3 font-semibold">Project Info</th>
+              <th scope="col" class="px-6 py-3 font-semibold">Finance Data</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody" class="divide-y divide-gray-100 bg-white"></tbody>
+        </table>
+      </div>
+
+      <div class="px-6 py-4 border-t border-gray-200 bg-gray-50 flex flex-col md:flex-row justify-between items-center gap-4">
+        <div id="infoText" class="text-sm text-gray-500">
+           </div>
+        
+        <div id="pagination" class="hidden md:flex items-center gap-1">
+           </div>
+
+        <div class="block md:hidden w-full">
+           <select id="pageSelect" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+              </select>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+</div>

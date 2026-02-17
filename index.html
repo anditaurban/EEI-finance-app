@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Finance App - EEI</title>
+  <link rel="icon" href="./assets/img/EEI_logo_new.png" sizes="32x32">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.29/jspdf.plugin.autotable.min.js"></script>
+
+  <script>
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = `./assets/css/style.css?v=${new Date().getTime()}`;
+    document.head.appendChild(link);
+  </script>
+</head>
+
+<body class="bg-gray-100 text-gray-900">
+  <div id="app">
+    <div id="section-data">
+      <div id="loadingOverlay" class="fixed top-0 left-0 w-full h-1 bg-gray-200 z-50 hidden">
+        <div id="progressBar" class="h-full bg-blue-600 transition-all duration-300" style="width: 0%;" data-timer-id="4"></div>
+      </div>  
+    </div>
+  </div>
+  
+  <!-- Library -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/tom-select/dist/js/tom-select.complete.min.js"></script>
+
+  <!-- Module Page JS File -->
+  <script>
+    const script = document.createElement('script');
+    script.src = `./assets/js/scripts.js?v=${new Date().getTime()}`;
+    document.body.appendChild(script);
+  </script>
+</body>
+</html>

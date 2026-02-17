@@ -1,0 +1,124 @@
+<div id="content" class="bg-gray-50 min-h-screen font-sans text-gray-800 p-4 md:p-6">
+  
+  <div class="max-w-7xl mx-auto">
+          <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+      <div>
+        <h1 id="formTitle" class="text-3xl font-bold text-gray-900 tracking-tight">Payables (OUT)</h1>
+        <nav class="flex items-center gap-2 text-sm text-gray-500 mt-1">
+          <span class="hover:text-blue-600 cursor-pointer transition">Home</span>
+          <svg class="w-3 h-3 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+          <span class="font-medium text-blue-600">Payable</span>
+        </nav>
+      </div>
+      
+      <div class="flex items-center gap-3">
+        <button id="addButton" class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-5 py-2.5 rounded-lg shadow-sm hover:shadow-md transition-all flex items-center gap-2">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+          New Invoice
+        </button>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      
+      <div class="bg-white p-5 rounded-xl border border-gray-100 shadow-sm relative overflow-hidden group hover:shadow-md transition">
+        <div class="absolute top-0 left-0 w-1 h-full bg-blue-500"></div>
+        <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Total Invoice (Excl. Tax)</p>
+        <div id="summary_total_invoice" class="text-2xl font-bold text-gray-900 font-mono tracking-tight mb-3">0</div>
+        <div class="flex items-center gap-3 text-xs font-medium">
+          <span class="bg-yellow-50 text-yellow-700 px-2 py-1 rounded border border-yellow-100"><span id="summary_unpaid">0</span> Unpaid</span>
+          <span class="bg-red-50 text-red-700 px-2 py-1 rounded border border-red-100"><span id="summary_overdue">0</span> Overdue</span>
+        </div>
+      </div>
+
+      <div class="bg-white p-5 rounded-xl border border-gray-100 shadow-sm relative overflow-hidden group hover:shadow-md transition">
+        <div class="absolute top-0 left-0 w-1 h-full bg-indigo-400"></div>
+        <div class="flex justify-between items-start">
+          <div>
+            <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Total PPN</p>
+            <div id="summary_total_ppn" class="text-xl font-bold text-gray-800 font-mono">0</div>
+          </div>
+          <div class="p-2 bg-indigo-50 rounded-lg text-indigo-600">
+             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-white p-5 rounded-xl border border-gray-100 shadow-sm relative overflow-hidden group hover:shadow-md transition">
+        <div class="absolute top-0 left-0 w-1 h-full bg-orange-400"></div>
+        <div class="flex justify-between items-start">
+          <div>
+            <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Total PPH (Deduction)</p>
+            <div id="summary_total_pph" class="text-xl font-bold text-gray-800 font-mono">0</div>
+          </div>
+          <div class="p-2 bg-orange-50 rounded-lg text-orange-600">
+             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-emerald-50 p-5 rounded-xl border border-emerald-100 shadow-sm relative overflow-hidden group hover:shadow-md transition">
+        <p class="text-xs font-bold text-emerald-600 uppercase tracking-wider mb-1">Net Receivable</p>
+        <div id="summary_total_final" class="text-2xl font-bold text-emerald-700 font-mono tracking-tight">0</div>
+        <p class="text-xs text-emerald-600/70 mt-1">Total Cash In Projection</p>
+      </div>
+
+    </div>
+
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+      
+      <div class="p-4 border-b border-gray-100 flex flex-col md:flex-row justify-between items-center gap-4 bg-white">
+        <div class="relative w-full md:w-96">
+          <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+          </div>
+          <input type="text" id="searchInput" onkeyup="debounceSearch()" placeholder="Search invoice, client, or project..." 
+            class="pl-10 pr-4 py-2 w-full text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition">
+        </div>
+
+        <div class="relative group">
+          <button id="dropdownFilterButton" onclick="toggleFilterDropdown()" class="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition">
+            <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/></svg>
+            <span id="dropdownFilterLabel">Filter Status</span>
+            <svg class="w-3 h-3 ml-1 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+          </button>
+          
+          <div id="dropdownFilterMenu" class="hidden absolute right-0 mt-2 w-64 bg-white border border-gray-100 rounded-xl shadow-xl z-50 p-2 text-sm animate-fade-in-down">
+             <div class="space-y-1">
+               <button onclick="filterData('')" class="w-full text-left px-3 py-2 rounded-lg hover:bg-gray-100 text-gray-700 font-medium">Show All</button>
+               <div class="h-px bg-gray-100 my-1"></div>
+               <button onclick="filterData('status=2')" class="flex justify-between items-center w-full px-3 py-2 rounded-lg hover:bg-gray-50 text-gray-600">
+                  <span>Menunggu Pembayaran</span> <span id="unpaid" class="bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-xs">0</span>
+               </button>
+               <button onclick="filterData('status=6')" class="flex justify-between items-center w-full px-3 py-2 rounded-lg hover:bg-gray-50 text-gray-600">
+                  <span>Partial Paid</span> <span id="partialpaid" class="bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-xs">0</span>
+               </button>
+               </div>
+           </div>
+        </div>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm text-left">
+          <thead class="text-xs text-gray-500 uppercase bg-gray-50 border-b border-gray-200">
+            <tr>
+              <th scope="col" class="px-6 py-3 font-semibold w-48">Ref / Date</th>
+              <th scope="col" class="px-6 py-3 font-semibold">Client & Project</th>
+              <th scope="col" class="px-6 py-3 font-semibold text-right">Amount Details</th>
+              <th scope="col" class="px-6 py-3 font-semibold text-center w-16">Action</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody" class="divide-y divide-gray-100">
+          </tbody>
+        </table>
+      </div>
+
+      <div class="px-6 py-4 border-t border-gray-200 bg-gray-50 flex flex-col md:flex-row justify-between items-center gap-4">
+        <div id="pagination" class="flex items-center gap-1">
+        </div>
+      </div>
+
+    </div>
+          </div>
+
+    </div>

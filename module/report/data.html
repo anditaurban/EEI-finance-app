@@ -1,0 +1,365 @@
+<div class="bg-white p-6 rounded-xl space-y-8">
+
+<!-- HEADER -->
+<div class="rounded-2xl shadow bg-gradient-to-r from-blue-800 to-blue-600 text-white p-8 mb-8 flex items-start justify-between gap-6">
+  <div>
+<h1 id="titleText" class="text-2xl font-semibold">Account Balance</h1>
+<p id="closingBalance" class="text-3xl font-bold mt-1 text-yellow-300">Rp 0</p>
+<p id="infoText" class="text-sm">
+  saldo awal dan akhir setiap periode berjalan
+</p>
+
+  </div>
+
+<div class="flex items-center gap-2">
+  <button id="btnInfo" onclick="showInformation()" class="tab-pill active">Informasi</button>
+  <button id="btnOverview" onclick="showOverview()" class="tab-pill">Overview</button>
+  <button id="btnHistory" onclick="showHistory()" class="tab-pill">History</button>
+  <button id="btnReport" onclick="showReport()" class="tab-pill">Report</button>
+</div>
+
+</div>
+
+<!-- INFORMATION VIEW -->
+<div id="informationView" class="space-y-6">
+    <!-- Info Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+<!-- ================= ANNOUNCEMENTS ================= -->
+<div class="md:col-span-2 bg-white border border-blue-100 rounded-2xl shadow p-6">
+
+  <div class="flex items-center justify-between mb-4">
+    <h2 class="text-xl font-semibold text-blue-900 flex items-center gap-2">
+      📢 Announcements
+    </h2>
+
+    <span id="announcementCount"
+          class="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full">
+      0
+    </span>
+  </div>
+
+  <!-- LIST -->
+  <div id="announcementList" class="space-y-4 text-sm text-gray-700">
+
+    <!-- skeleton -->
+    <div class="animate-pulse">
+      <div class="h-4 bg-gray-200 rounded w-1/2 mb-2"></div>
+      <div class="h-3 bg-gray-200 rounded w-1/3 mb-3"></div>
+      <div class="h-3 bg-gray-200 rounded w-full mb-1"></div>
+      <div class="h-3 bg-gray-200 rounded w-5/6"></div>
+    </div>
+
+  </div>
+
+</div>
+
+
+<div class="bg-white border border-blue-100 rounded-2xl shadow p-6 flex flex-col gap-4">
+
+  <!-- TITLE -->
+  <h2 class="text-xl font-semibold text-blue-900 mb-3 flex items-center gap-2">
+    🛠️ Working Progress
+  </h2>
+
+  <!-- WORKING PROGRESS LIST -->
+  <ul id="workingProgressList"
+      class="list-disc ml-5 text-sm text-gray-700 space-y-1">
+    <!-- injected by JS -->
+  </ul>
+
+  <!-- QUICK STATS -->
+  <div class="mt-4">
+    <h3 class="text-base font-semibold text-blue-800 mb-2">
+      Quick Stats
+    </h3>
+
+    <div class="grid grid-cols-2 gap-2">
+      <div class="bg-blue-50 rounded-lg p-3 text-center">
+        <div id="stat-active-projects" class="text-2xl font-bold text-blue-900">0</div>
+        <div class="text-xs text-gray-500">Active Projects</div>
+      </div>
+
+      <div class="bg-blue-50 rounded-lg p-3 text-center">
+        <div id="stat-ongoing-tasks" class="text-2xl font-bold text-blue-900">0</div>
+        <div class="text-xs text-gray-500">Ongoing Tasks</div>
+      </div>
+
+      <div class="bg-blue-50 rounded-lg p-3 text-center">
+        <div id="stat-pending-approvals" class="text-2xl font-bold text-blue-900">0</div>
+        <div class="text-xs text-gray-500">Pending Approvals</div>
+      </div>
+
+      <div class="bg-blue-50 rounded-lg p-3 text-center">
+        <div id="stat-new-announcements" class="text-2xl font-bold text-blue-900">0</div>
+        <div class="text-xs text-gray-500">New Announcements</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+
+</div>
+
+</div>
+
+<!-- OVERVIEW VIEW -->
+<div id="overviewView" class="hidden space-y-6">
+
+  <!-- METRIC CARDS -->
+  <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+
+    <div class="bg-white border border-gray-200 rounded-xl p-5">
+      <p class="text-sm text-gray-500">Opening Balance</p>
+      <p id="openingBalance" class="text-xl font-semibold mt-1">Rp 0</p>
+    </div>
+
+    <div class="bg-white border border-gray-200 rounded-xl p-5">
+      <p class="text-sm text-gray-500">Net Cash Movement</p>
+      <p id="netCash" class="text-xl font-semibold mt-1">Rp 0</p>
+    </div>
+
+    <div class="bg-white border border-gray-200 rounded-xl p-5">
+      <p class="text-sm text-gray-500">Cash Inflow</p>
+      <p id="cashIn" class="text-xl font-semibold mt-1">Rp 0</p>
+    </div>
+
+    <div class="bg-white border border-gray-200 rounded-xl p-5">
+      <p class="text-sm text-gray-500">Cash Outflow</p>
+      <p id="cashOut" class="text-xl font-semibold mt-1">Rp 0</p>
+    </div>
+
+  </div>
+
+  <!-- LABA RUGI + DONUT -->
+  <div class="bg-white border border-gray-200 rounded-xl p-6 grid grid-cols-1 lg:grid-cols-3 gap-6 items-center">
+
+    <!-- DONUT -->
+    <div class="flex flex-col items-center justify-center">
+      <canvas id="donutChart" width="180" height="180"></canvas>
+      <p class="text-xs text-gray-500 text-center mt-2">
+        Dibanding 1 Jan – 22 Agu<br />tahun sebelumnya
+      </p>
+    </div>
+
+    <!-- SUMMARY -->
+    <div class="lg:col-span-2 space-y-4">
+      <h3 class="font-semibold text-lg">Laba / Rugi Tahun ini</h3>
+
+      <div class="space-y-2 text-sm">
+
+        <div class="flex justify-between items-center">
+          <span class="flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-green-500"></span>
+            Pendapatan
+          </span>
+          <span id="profitIncome">Rp 0 (0%)</span>
+        </div>
+
+        <div class="flex justify-between items-center">
+          <span class="flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-yellow-400"></span>
+            Nilai HPP
+          </span>
+          <span id="profitHpp">Rp 0 (0%)</span>
+        </div>
+
+        <div class="flex justify-between items-center">
+          <span class="flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-red-500"></span>
+            Pengeluaran
+          </span>
+          <span id="profitExpense">Rp 0 (0%)</span>
+        </div>
+
+      </div>
+
+      <div class="pt-4 border-t">
+        <p id="profitResult" class="text-xl font-semibold text-red-600">
+          Rugi Rp 0
+        </p>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+
+<!-- HISTORY VIEW -->
+<div id="historyView" class="hidden space-y-6">
+
+  <!-- RANGE SWITCH -->
+  <div class="flex gap-3">
+    <button class="range-btn active" onclick="switchRange('daily')">Daily</button>
+    <button class="range-btn" onclick="switchRange('monthly')">Monthly</button>
+    <button class="range-btn" onclick="switchRange('yearly')">Yearly</button>
+  </div>
+
+  <!-- CHART -->
+  <div class="border rounded-xl p-6">
+    <canvas id="historyChart" height="120"></canvas>
+  </div>
+
+</div>
+
+<!-- REPORT VIEW -->
+<div id="reportView" class="hidden space-y-6">
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+  <!-- Laba Rugi (Standard) -->
+  <div onclick="loadModuleContent('sales_summary')" class="group relative bg-white rounded-2xl shadow-xl overflow-hidden transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl">
+    <div class="absolute inset-0 bg-gradient-to-br from-purple-50 to-indigo-50 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+    <div class="relative p-8">
+      <div class="w-14 h-14 flex items-center justify-center bg-purple-100 rounded-lg mb-6">
+        <!-- Icon: Document Report -->
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-6h13v6H9zM9 17v2a2 2 0 01-2 2H5a2 2 0 01-2-2v-2h6zm0-6V7a2 2 0 012-2h4l4 4v2H9z"/>
+        </svg>
+      </div>
+      <h3 class="text-2xl font-bold text-gray-900 mb-3">Laba Rugi (Standard)</h3>
+      <p class="text-gray-600 mb-6 leading-relaxed">Menampilkan laporan laba rugi untuk periode yg dipilih</p>
+      <div class="flex items-center text-purple-600 font-medium">
+        <span>Explore features</span>
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-1 transition-transform duration-300 group-hover:translate-x-1" viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd" d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z" clip-rule="evenodd"/>
+        </svg>
+      </div>
+    </div>
+  </div>
+
+  <!-- Laba Rugi (Multi Period) -->
+  <div onclick="loadModuleContent('product_summary')" class="group relative bg-white rounded-2xl shadow-xl overflow-hidden transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl">
+    <div class="absolute inset-0 bg-gradient-to-br from-blue-50 to-cyan-50 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+    <div class="relative p-8">
+      <div class="w-14 h-14 flex items-center justify-center bg-blue-100 rounded-lg mb-6">
+        <!-- Icon: Chart Bar -->
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3v18h18M9 17v-6m4 6v-10m4 10V9"/>
+        </svg>
+      </div>
+      <h3 class="text-2xl font-bold text-gray-900 mb-3">Laba Rugi (Multi Period)</h3>
+      <p class="text-gray-600 mb-6 leading-relaxed">Menampilkan Laba Rugi Bulanan pada rentang periode terpilih</p>
+      <div class="flex items-center text-blue-600 font-medium">
+        <span>Explore features</span>
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-1 transition-transform duration-300 group-hover:translate-x-1" viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd" d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z" clip-rule="evenodd"/>
+        </svg>
+      </div>
+    </div>
+  </div>
+
+  <!-- Arus Kas -->
+  <div onclick="loadModuleContent('customer_summary')" class="group relative bg-white rounded-2xl shadow-xl overflow-hidden transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl">
+    <div class="absolute inset-0 bg-gradient-to-br from-green-50 to-teal-50 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+    <div class="relative p-8">
+      <div class="w-14 h-14 flex items-center justify-center bg-green-100 rounded-lg mb-6">
+        <!-- Icon: Cash Flow -->
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v8m0 0l-3-3m3 3l3-3M5 12a7 7 0 0114 0 7 7 0 11-14 0z"/>
+        </svg>
+      </div>
+      <h3 class="text-2xl font-bold text-gray-900 mb-3">Arus Kas (Tak Langsung)</h3>
+      <p class="text-gray-600 mb-6 leading-relaxed">Menampilkan arus kas dan aliran keluar kas untuk periode tertentu</p>
+      <div class="flex items-center text-green-600 font-medium">
+        <span>Explore features</span>
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-1 transition-transform duration-300 group-hover:translate-x-1" viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd" d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z" clip-rule="evenodd"/>
+        </svg>
+      </div>
+    </div>
+  </div>
+
+  <!-- Neraca (Standard) -->
+  <div onclick="loadModuleContent('finance_summary')" class="group relative bg-white rounded-2xl shadow-xl overflow-hidden transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl">
+    <div class="absolute inset-0 bg-gradient-to-br from-red-50 to-pink-50 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+    <div class="relative p-8">
+      <div class="w-14 h-14 flex items-center justify-center bg-red-100 rounded-lg mb-6">
+        <!-- Icon: Balance Scale -->
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v2m0 4v12m0-12h9l-4 7H7l-4-7h9z"/>
+        </svg>
+      </div>
+      <h3 class="text-2xl font-bold text-gray-900 mb-3">Neraca (Standard)</h3>
+      <p class="text-gray-600 mb-6 leading-relaxed">Menampilkan Neraca Standar</p>
+      <div class="flex items-center text-red-600 font-medium">
+        <span>Explore features</span>
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-1 transition-transform duration-300 group-hover:translate-x-1" viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd" d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z" clip-rule="evenodd"/>
+        </svg>
+      </div>
+    </div>
+  </div>
+
+  <!-- Neraca (Multi Period) -->
+  <div onclick="loadModuleContent('finance_summary')" class="group relative bg-white rounded-2xl shadow-xl overflow-hidden transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl">
+    <div class="absolute inset-0 bg-gradient-to-br from-yellow-50 to-amber-50 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+    <div class="relative p-8">
+      <div class="w-14 h-14 flex items-center justify-center bg-yellow-100 rounded-lg mb-6">
+        <!-- Icon: Calendar -->
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3M4 11h16M5 19h14a2 2 0 002-2v-7H3v7a2 2 0 002 2z"/>
+        </svg>
+      </div>
+      <h3 class="text-2xl font-bold text-gray-900 mb-3">Neraca (Multi Period)</h3>
+      <p class="text-gray-600 mb-6 leading-relaxed">Menampilkan Neraca per akhir bulan pada rentang periode terpilih</p>
+      <div class="flex items-center text-yellow-600 font-medium">
+        <span>Explore features</span>
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-1 transition-transform duration-300 group-hover:translate-x-1" viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd" d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z" clip-rule="evenodd"/>
+        </svg>
+      </div>
+    </div>
+  </div>
+</div>    
+</div>
+
+</div>
+
+
+<style>
+.tab-pill {
+  min-width: 96px;                 /* ⬅️ kunci utama biar gak geser */
+  height: 36px;                    /* tinggi konsisten */
+  padding: 0 18px;                 /* padding tetap */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 999px;
+  border: 2px solid #bfdbfe;       /* border SELALU ADA */
+  background: transparent;
+
+  font-size: 14px;
+  font-weight: 500;                /* jangan berubah */
+  color: #e0e7ff;                  /* blue-100 */
+
+  transition: 
+    background-color 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.tab-pill.active {
+  background: #2563eb;             /* blue-600 */
+  color: #ffffff;
+  border-color: #facc15;           /* yellow-400 */
+}
+
+
+.range-btn {
+  padding: 6px 16px;
+  border-radius: 999px;
+  border: 1px solid #bfdbfe; /* blue-200 */
+  font-size: 14px;
+  background: #fff;
+  color: #1e3a8a;
+}
+
+.range-btn.active {
+  background: #2563eb; /* blue-600 */
+  color: white;
+  border-color: #2563eb;
+}
+
+</style>
+

@@ -1,0 +1,155 @@
+<div class="bg-white transition-colors duration-300 p-6 rounded-lg shadow">
+  <section class="space-y-6">
+
+    <!-- Header -->
+    <div class="flex flex-wrap items-start justify-between gap-4">
+      <div>
+        <h1 id="formTitle" class="text-2xl font-bold mb-1">ACCOUNT PAYABLE</h1>
+        <nav class="text-gray-500 text-sm flex items-center flex-wrap gap-1">
+          <span>Home</span>
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+          </svg>
+          <span>Payable</span>
+        </nav>
+      </div>
+    </div>
+
+    <!-- Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+
+      <!-- Total Invoice -->
+      <div class="bg-gradient-to-br from-blue-700 to-gray-600 text-white p-5 rounded-xl shadow flex flex-col justify-between border border-gray-300">
+        <div class="flex items-center justify-between mb-2">
+          <span class="font-semibold">TOTAL INVOICE</span>
+        </div>
+        <div id="summary_total_invoice" class="text-2xl text-right font-bold mb-2">---</div>
+        <div class="flex justify-between text-sm">
+          <span id="summary_unpaid" class="text-yellow-400">0 Unpaid</span>
+          <span id="summary_overdue" class="text-red-400">0 Overdue</span>
+        </div>
+      </div>
+
+      <!-- Total PPN -->
+      <div class="bg-white rounded-xl shadow p-5 border border-gray-300">
+        <div class="flex items-center justify-between mb-2">
+          <span class="font-semibold text-gray-800">TOTAL PPN</span>
+        </div>
+        <div id="summary_total_ppn" class="text-2xl text-right font-bold text-gray-800 mb-2">---</div>
+      </div>
+
+      <!-- Total PPH -->
+      <div class="bg-white rounded-xl shadow p-5 border border-gray-300">
+        <div class="flex items-center justify-between mb-2">
+          <span class="font-semibold text-gray-800">TOTAL PPH</span>
+        </div>
+        <div id="summary_total_pph" class="text-2xl text-right font-bold text-gray-800 mb-2">---</div>
+      </div>
+
+      <!-- Total Final -->
+      <div class="bg-white rounded-xl shadow p-5 border border-gray-300">
+        <div class="flex items-center justify-between mb-2">
+          <span class="font-semibold text-gray-800">TOTAL FINAL</span>
+        </div>
+        <div id="summary_total_final" class="text-2xl text-right font-bold tracking-wider mb-2">---</div>
+        <p class="text-sm text-gray-500">Total Invoice including Tax</p>
+      </div>
+    </div>
+
+    <!-- Search + Filter -->
+    <div class="flex flex-col md:flex-row md:justify-between md:items-center gap-4 text-sm">
+
+      <!-- Search -->
+      <div class="w-full md:w-auto">
+        <input
+          type="text"
+          id="searchInput"
+          onkeyup="debounceSearch()"
+          placeholder="ðŸ”Ž Cari..."
+          class="px-3 py-2 border rounded w-full md:w-96"
+        />
+      </div>
+
+      <!-- Filter -->
+      <div class="flex flex-wrap items-center justify-end gap-2 w-full md:w-auto">
+
+        <!-- Add Button -->
+        <button id="addButton" class="bg-blue-600 hover:bg-blue-700 text-white text-sm px-4 py-2 rounded">
+          + Add Data
+        </button>
+
+        <!-- Dropdown Filter -->
+        <div class="relative">
+          <button id="dropdownFilterButton" onclick="toggleFilterDropdown()" 
+            class="flex items-center justify-between px-3 py-2 border rounded w-52 hover:bg-gray-50">
+            <span id="dropdownFilterLabel">Filter Data</span>
+            <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+
+          <!-- Dropdown Menu -->
+          <div id="dropdownFilterMenu" 
+            class="hidden absolute right-0 mt-2 w-56 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
+
+            <button onclick="filterData('status=2')" class="flex justify-between w-full px-4 py-2 text-sm hover:bg-gray-100"> 
+              <span>Menunggu Pembayaran</span><span id="unpaid" class="font-bold">0</span>
+            </button>
+            <button onclick="filterData('status=6')" class="flex justify-between w-full px-4 py-2 text-sm hover:bg-gray-100"> 
+              <span>Pembayaran Sebagian</span><span id="partialpaid" class="font-bold">0</span>
+            </button>
+            <button onclick="filterData('status=7')" class="flex justify-between w-full px-4 py-2 text-sm hover:bg-gray-100"> 
+              <span>Sedang di verifikasi</span><span id="unverified" class="font-bold">0</span>
+            </button>
+            <button onclick="filterData('status=1')" class="flex justify-between w-full px-4 py-2 text-sm hover:bg-gray-100"> 
+              <span>Di Proses</span><span id="process" class="font-bold">0</span>
+            </button>
+            <button onclick="filterData('salesman=0')" class="flex justify-between w-full px-4 py-2 text-sm hover:bg-gray-100"> 
+              <span>Belum Ada Salesman</span><span id="unsalesman" class="font-bold">0</span>
+            </button>
+
+            <div class="border-t border-gray-200 my-1"></div>
+
+            <button onclick="filterData('type=1')" class="block w-full px-4 py-2 text-sm hover:bg-gray-100">Reguler</button>
+            <button onclick="filterData('type=2')" class="block w-full px-4 py-2 text-sm hover:bg-gray-100">COD</button>
+            <button onclick="filterData('type=3')" class="block w-full px-4 py-2 text-sm hover:bg-gray-100">Marketplace</button>
+            <div class="border-t border-gray-200 my-1"></div>
+            <button onclick="filterData('')" class="block w-full px-4 py-2 text-sm hover:bg-gray-100">Semua</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+<!-- Table -->
+<div class="overflow-x-auto">
+  <table class="min-w-full text-sm border">
+    <thead id="tableHeader" class="hidden md:table-header-group bg-gray-100 text-gray-600">
+      <tr>
+        <th class="px-4 py-2 border border-gray-300 text-left w-[15%]">DATE</th>
+        <th class="px-4 py-2 border border-gray-300 text-left">INFORMATION</th>
+        <th class="px-4 py-2 border border-gray-300 text-left">VENDOR</th>
+        <th class="px-4 py-2 border border-gray-300 text-left w-[15%]">AMOUNT</th>
+      </tr>
+    </thead>
+    <tbody id="tableBody" class="align-top">
+      <!-- Data diisi via JavaScript -->
+    </tbody>
+  </table>
+</div>
+
+
+
+
+    <!-- Pagination -->
+    <div class="mt-4 flex flex-col md:flex-row md:justify-between md:items-center gap-2">
+      <p id="infoText" class="hidden md:block text-gray-600 text-sm"></p>
+      <div id="pagination" class="hidden md:flex flex-wrap justify-between items-center gap-2 text-sm w-full"></div>
+
+      <!-- Mobile Page Selector -->
+      <div class="block md:hidden text-sm text-center mb-12">
+        <label for="pageSelect" class="mr-2">Go to Page:</label>
+        <select id="pageSelect" class="px-2 py-1 border rounded"></select>
+      </div>
+    </div>
+  </section>
+</div>
