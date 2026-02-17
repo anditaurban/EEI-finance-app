@@ -1,4 +1,4 @@
-const isLocalhost = ['localhost', '127.0.0.1', 'finance.energieei.co.id'].includes(window.location.hostname);
+const isLocalhost = ['localhost', '127.0.0.1', 'eei-finance-app.vercel.app'].includes(window.location.hostname);
 const mode = isLocalhost ? 'development' : 'production';
 const baseUrl = mode === 'production'
   ? 'https://apieei.katib.cloud'  //production
