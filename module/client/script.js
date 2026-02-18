@@ -16,8 +16,8 @@ window.rowTemplate = function (item) {
 
       <td class="px-6 py-4">
         <div class="space-y-1 text-gray-600">
-          <div>${item.email || '-'}</div>
-          <div>${item.phone || '-'}</div>
+          <div>${item.email || "-"}</div>
+          <div>${item.phone || "-"}</div>
         </div>
       </td>
 
@@ -44,9 +44,9 @@ window.rowTemplate = function (item) {
             class="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition" title="Edit Client">
             ✏️
           </button>
-          <button onclick="openLinkCOAModal(${item.pelanggan_id}, '${item.coa_id}')"
-            class="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition" title="Link COA">
-            🔗
+          <button onclick="openLinkCOAModal(${item.pelanggan_id}, '${item.coa_code}', '${item.coa_id}')"
+              class="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition" title="Link COA">
+              🔗
           </button>
           <button onclick="event.stopPropagation(); handleDelete(${item.pelanggan_id}, '${item.nama}')"
             class="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition" title="Delete Client">
@@ -59,94 +59,145 @@ window.rowTemplate = function (item) {
   `;
 };
 
-async function openLinkCOAModal(clientId, currentCoaId = null) {
+async function openLinkCOAModal(clientId, coacode = null, currentCoaId = null) {
   Swal.fire({
-    title: 'Link COA Client',
+    title: "Link COA Client",
     width: 480,
     showCancelButton: true,
-    confirmButtonText: 'Simpan',
-    cancelButtonText: 'Batal',
+    confirmButtonText: "Simpan",
+    cancelButtonText: "Batal",
     focusConfirm: false,
-    customClass: {
-      popup: 'rounded-2xl px-6 py-5',
+ customClass: {
+      popup: "rounded-2xl px-6 py-5",
+      title: "text-2xl font-bold text-gray-800 mb-6",
       confirmButton:
-        'bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg',
+        "bg-blue-600 hover:bg-blue-700 text-white px-8 py-2.5 rounded-xl text-sm font-semibold order-2",
       cancelButton:
-        'bg-gray-100 hover:bg-gray-200 text-gray-700 px-6 py-2 rounded-lg ml-3'
+        "bg-gray-100 hover:bg-gray-200 text-gray-600 px-8 py-2.5 rounded-xl text-sm font-semibold order-1",
     },
     html: `
-      <div class="text-left space-y-4">
+      <div class="text-left">
+        <div class="mb-4">
+          <div class="text-sm font-bold text-gray-700">COA : ${coacode || "-"}</div>
+          <div class="text-sm text-gray-600">AKTIVA | Aktiva Lancar | Piutang Usaha</div>
+        </div>
 
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">
-            COA : 1-1310.00
-            <br>AKTIVA | Aktiva Lancar | Piutang Usaha
-          </label>
+        <div class="relative">
           <select id="coa_id"
-            class="w-full h-11 rounded-lg border border-gray-300 px-3
-                   focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            class="w-full h-12 rounded-xl border-2 border-blue-500 px-4 bg-white
+                   focus:ring-0 focus:outline-none text-gray-700 appearance-none cursor-pointer">
             <option value="">- Pilih COA -</option>
           </select>
-
-          <div class="text-xs text-gray-400 mt-1">
-            COA saat ini:
-            <span class="font-medium">${currentCoaId || '-'}</span>
+          <div class="absolute inset-y-0 right-4 flex items-center pointer-events-none">
+            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+            </svg>
           </div>
         </div>
 
+        <div class="mt-2 text-sm text-gray-400">
+          COA saat ini: <span class="font-medium text-gray-500">${currentCoaId || "-"}</span>
+        </div>
       </div>
     `,
     didOpen: () => {
+      // Pastikan fungsi ini sudah menggunakan endpoint /list/coa_piutang_usaha/
       loadCOAOptions(currentCoaId);
     },
     preConfirm: () => {
-      const coaId = document.getElementById('coa_id').value;
+      const coaId = document.getElementById("coa_id").value;
       if (!coaId) {
-        Swal.showValidationMessage('COA wajib dipilih');
+        Swal.showValidationMessage("Silakan pilih COA terlebih dahulu");
         return false;
       }
-      return { coa_id: coaId };
-    }
+      return { coa_id: parseInt(coaId) };
+    },
   }).then(async (result) => {
     if (!result.isConfirmed) return;
 
     try {
-      const res = await fetch(`/api/client/${clientId}/link-coa`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(result.value)
+      // Update menggunakan endpoint sesuai revisi gambar Postman sebelumnya
+      const res = await fetch(`${baseUrl}/update/client_coa/${clientId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${API_TOKEN}`,
+        },
+        body: JSON.stringify(result.value),
       });
 
-      if (!res.ok) throw await res.json();
+      const resData = await res.json();
+      if (!res.ok) throw resData;
 
-      Swal.fire('Berhasil', 'COA berhasil di-link ke client', 'success');
-      loadTableData();
+      Swal.fire({
+        icon: "success",
+        title: "Berhasil",
+        text: "COA Client telah diperbarui",
+        timer: 1500,
+        showConfirmButton: false,
+      });
 
+      // Refresh data tabel
+      if (typeof fetchAndUpdateData === "function") fetchAndUpdateData();
     } catch (err) {
-      Swal.fire('Gagal', err.message || 'Gagal menyimpan COA', 'error');
+      Swal.fire(
+        "Gagal",
+        err.message || "Terjadi kesalahan saat menyimpan data",
+        "error",
+      );
     }
   });
 }
 
 async function loadCOAOptions(selectedCoaId = null) {
-  const select = document.getElementById('coa_id');
+  const select = document.getElementById("coa_id");
   if (!select) return;
 
-  const res = await fetch('/api/coa?type=asset');
-  const { data } = await res.json();
+  select.innerHTML = `<option value="">Loading...</option>`;
 
-  data.forEach(coa => {
-    const opt = document.createElement('option');
-    opt.value = coa.coa_id;
-    opt.textContent = `${coa.code} - ${coa.name}`;
-    if (String(coa.coa_id) === String(selectedCoaId)) {
-      opt.selected = true;
+  try {
+    const res = await fetch(`${baseUrl}/list/coa_piutang_usaha/${owner_id}`, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${API_TOKEN}`,
+        "Content-Type": "application/json",
+      },
+    });
+
+    const contentType = res.headers.get("content-type");
+    if (!contentType || !contentType.includes("application/json")) {
+      throw new TypeError(
+        "Server tidak mengembalikan JSON! Pastikan baseUrl benar.",
+      );
     }
-    select.appendChild(opt);
-  });
+
+    const result = await res.json();
+    const listData = result.listData;
+
+    select.innerHTML = `<option value="">- Pilih COA -</option>`;
+
+    if (Array.isArray(listData)) {
+      listData.forEach((coa) => {
+        const opt = document.createElement("option");
+        opt.value = coa.coa_id;
+        opt.textContent = `${coa.code} - ${coa.name}`;
+
+        // Pilih otomatis jika coa_id cocok
+        if (String(coa.coa_id) === String(selectedCoaId)) {
+          opt.selected = true;
+        }
+        select.appendChild(opt);
+      });
+    } else {
+      select.innerHTML = `<option value="">Data tidak ditemukan</option>`;
+    }
+  } catch (error) {
+    console.error("Gagal memuat data:", error);
+    select.innerHTML = `<option value="">Gagal memuat data</option>`;
+  }
 }
 
-document.getElementById('addButton').addEventListener('click', () => {
+document.getElementById("addButton").addEventListener("click", () => {
   showFormModal();
   loadDropdownCall();
 });
@@ -163,7 +214,9 @@ async function fillFormData(data) {
       const check = () => {
         const select = document.getElementById(selectId);
         if (!select) return resolve();
-        const exists = Array.from(select.options).some(opt => opt.value == expectedValue);
+        const exists = Array.from(select.options).some(
+          (opt) => opt.value == expectedValue,
+        );
         if (exists || waited >= timeout) {
           resolve();
         } else {
@@ -200,7 +253,6 @@ async function fillFormData(data) {
   if (unitSelect) unitSelect.value = data[0].unit_id || "";
   if (brandSelect) brandSelect.value = data[0].brand_id || "";
 
-
   // File (hanya tampilkan nama file di file_text jika ada)
   if (data[0].picture) {
     document.getElementById("file_text").value = data[0].picture;
@@ -216,11 +268,11 @@ async function loadDropdown(selectId, apiUrl, valueField, labelField) {
 
   try {
     const response = await fetch(apiUrl, {
-      method: 'GET',
+      method: "GET",
       headers: {
-        'Authorization': `Bearer ${API_TOKEN}`,
-        'Content-Type': 'application/json'
-      }
+        Authorization: `Bearer ${API_TOKEN}`,
+        "Content-Type": "application/json",
+      },
     });
 
     const result = await response.json();
@@ -230,16 +282,15 @@ async function loadDropdown(selectId, apiUrl, valueField, labelField) {
     select.innerHTML = `<option value="">Pilih...</option>`;
 
     if (Array.isArray(listData)) {
-      listData.forEach(item => {
-        const option = document.createElement('option');
+      listData.forEach((item) => {
+        const option = document.createElement("option");
         option.value = item[valueField];
         option.textContent = item[labelField];
         select.appendChild(option);
       });
     } else {
-      console.error('Format listData tidak sesuai:', listData);
+      console.error("Format listData tidak sesuai:", listData);
     }
-
   } catch (error) {
     console.error(`Gagal memuat data untuk ${selectId}:`, error);
     select.innerHTML = `<option value="">Gagal memuat data</option>`;
@@ -247,11 +298,25 @@ async function loadDropdown(selectId, apiUrl, valueField, labelField) {
 }
 
 function loadDropdownCall() {
-  loadDropdown('category_id', `${baseUrl}/list/product_category/${owner_id}`, 'category_id', 'category');
-  loadDropdown('unit_id', `${baseUrl}/list/product_unit/${owner_id}`, 'unit_id', 'unit');
-  loadDropdown('brand_id', `${baseUrl}/list/product_brand/${owner_id}`, 'brand_id', 'nama_brand');
-} 
-
+  loadDropdown(
+    "category_id",
+    `${baseUrl}/list/product_category/${owner_id}`,
+    "category_id",
+    "category",
+  );
+  loadDropdown(
+    "unit_id",
+    `${baseUrl}/list/product_unit/${owner_id}`,
+    "unit_id",
+    "unit",
+  );
+  loadDropdown(
+    "brand_id",
+    `${baseUrl}/list/product_brand/${owner_id}`,
+    "brand_id",
+    "nama_brand",
+  );
+}
 
 formHtml = `
 <form id="dataformfile"
