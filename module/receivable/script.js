@@ -478,7 +478,7 @@ async function handlePayment(receivableId, projectName, nominal) {
                 const pphNominal = Math.round((totalIDR * pphPct) / 100);
                 
                 const totalInvTax = totalIDR + ppnNominal; 
-                const totalNet = totalInvTax - pphNominal;
+                const totalNet = totalIDR - pphNominal;
 
                 document.getElementById('ppn_nominal_display').value = finance(ppnNominal);
                 document.getElementById('pph_nominal_display').value = finance(pphNominal);
