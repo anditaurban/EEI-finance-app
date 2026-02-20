@@ -9,40 +9,34 @@ loadHppList();
 
 async function loadPphList() {
   const select = document.getElementById('pph_percent');
+  if (!select) return;
 
   select.innerHTML = `<option value="0">Memuat data...</option>`;
   select.disabled = true;
 
   try {
-    const res = await fetch(
-    //   `${baseUrl}/list/coa_pph/${owner_id}`,
-      `${baseUrl}/list/coa_hutang_pajak/${owner_id}`,
-      {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${API_TOKEN}`,
-          'Content-Type': 'application/json'
-        }
+    const res = await fetch(`${baseUrl}/list/coa_hutang_pajak/${owner_id}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${API_TOKEN}`,
+        'Content-Type': 'application/json'
       }
-    );
+    });
 
     if (!res.ok) throw new Error('Gagal ambil data PPh');
 
     const data = await res.json();
     const list = data.listData || [];
-
     select.innerHTML = `<option value="0">-- Pilih Jenis PPh --</option>`;
 
     list.forEach(item => {
       const opt = document.createElement('option');
-      opt.value = item.coa_id;                 // persen
+      opt.value = item.coa_id;
       opt.textContent = `${item.name} (${item.value}%)`;
-      opt.dataset.coaId = item.coa_id;        // 🔥 penting utk backend
+      opt.dataset.coaId = item.coa_id;
       select.appendChild(opt);
     });
-
     select.disabled = false;
-
   } catch (err) {
     console.error(err);
     select.innerHTML = `<option value="0">Gagal memuat PPh</option>`;
@@ -51,43 +45,39 @@ async function loadPphList() {
 
 async function loadHppList() {
   const select = document.getElementById('pph_list');
+  if (!select) return;
 
   select.innerHTML = `<option value="0">Memuat data...</option>`;
   select.disabled = true;
 
   try {
-    const res = await fetch(
-      `${baseUrl}/list/coa_hpp/${owner_id}`,
-      {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${API_TOKEN}`,
-          'Content-Type': 'application/json'
-        }
+    // Endpoint diubah menjadi list/coa_bua sesuai permintaan revisi
+    const res = await fetch(`${baseUrl}/list/coa_bua/${owner_id}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${API_TOKEN}`,
+        'Content-Type': 'application/json'
       }
-    );
+    });
 
-    if (!res.ok) throw new Error('Gagal ambil data Hpp');
+    if (!res.ok) throw new Error('Gagal ambil data HPP');
 
     const data = await res.json();
-    console.log('Data HPP : ', data);
     const list = data.listData || [];
 
-    select.innerHTML = `<option value="0">-- Pilih Jenis Hpp --</option>`;
+    select.innerHTML = `<option value="0">-- Pilih Jenis HPP --</option>`;
 
     list.forEach(item => {
       const opt = document.createElement('option');
-      opt.value = item.coa_id;                 // persen
-      opt.textContent = `${item.name} (${item.value}%)`;
-      opt.dataset.coaId = item.coa_id;        // 🔥 penting utk backend
+      opt.value = item.coa_id;
+      opt.textContent = item.name;
       select.appendChild(opt);
     });
 
     select.disabled = false;
-
   } catch (err) {
     console.error(err);
-    select.innerHTML = `<option value="0">Gagal memuat PPh</option>`;
+    select.innerHTML = `<option value="0">Gagal memuat HPP</option>`;
   }
 }
 
@@ -100,29 +90,18 @@ var isEditMode = !!(window.detail_id && window.detail_id !== "null" && window.de
   const projectInput = document.getElementById("projectInput");
   
   if (isEditMode) {
-    // mode update
     addButton.classList.add("hidden");
     updateButton.classList.remove("hidden");
-    
-    // kunci search project saat edit
     projectInput.readOnly = true;
     projectInput.classList.add("bg-gray-100");
-    
-    // load data detail
     loadDetail(window.detail_id, window.detail_desc);
   } else {
-    // mode create
     addButton.classList.remove("hidden");
     updateButton.classList.add("hidden");
-    
-    // unlock project search di mode create
     projectInput.readOnly = false;
     projectInput.classList.remove("bg-gray-100");
-    
-    // setup project search
     setupProjectSearch();
-    
-    // reset form title
+    setupVendorSearch(); // Inisialisasi pencarian vendor (Revisi Poin 3)
     document.getElementById("formTitle").innerText = "PAYABLE FORM";
   }
 })();
@@ -131,28 +110,18 @@ var isEditMode = !!(window.detail_id && window.detail_id !== "null" && window.de
 function calculateKonversi() {
   let nominal = unfinance(document.getElementById("nominal").value);
   let rate = unfinance(document.getElementById("rate").value);
-
   if (!rate || rate === 0) rate = 1;
 
   let totalIDR = nominal * rate;
-
   document.getElementById("total_converted").value = finance(totalIDR);
 
   const projectAmount = unfinance(document.getElementById("project_amount").value);
   if (projectAmount > 0) {
     const percent = (totalIDR / projectAmount) * 100;
-    document.getElementById("percent_converted").value = percent.toFixed(2).replace(/\.00$/, "");
-  } else {
-    document.getElementById("percent_converted").value = "0";
+    document.getElementById("percent_converted").value = percent.toFixed(2);
   }
 
-  const currentTotalInvoice = unfinance(document.getElementById("total_invoice").value);
-  
-  if (currentTotalInvoice === 0 || !document.getElementById("total_invoice").dataset.manualEdit) {
-    document.getElementById("total_invoice").value = finance(totalIDR);
-    document.getElementById("percent_invoice").value = document.getElementById("percent_converted").value;
-  }
-
+  document.getElementById("total_invoice").value = finance(totalIDR);
   calculateTax();
 }
 
@@ -296,9 +265,12 @@ function setupProjectSearch() {
 
 // mapping project ke form
 async function selectProject(data) {
+  // Masukkan data ke input agar bisa diambil oleh getDataPayload
   document.getElementById("projectInput").value = data.project_name || "";
-  document.getElementById("project_id").value = data.project_id || "";
-  document.getElementById("project_number").value = data.project_number || "";
+  document.getElementById("project_id").value = data.project_id || ""; // Pastikan ID tersimpan
+  document.getElementById("project_number").value = data.project_number || ""; // Pastikan Number tersimpan
+
+  console.log("Project Terpilih:", data.project_name, "ID:", data.project_id);
 
   let poValue = data.po_number;
   if (!poValue || poValue.trim() === "") {
@@ -407,84 +379,48 @@ async function loadVendorsForProject(projectId) {
   }
 }
 
-// setup vendor field (dropdown or input)
 function setupVendorField(vendors) {
-  console.log('=== Setup Vendor Field ===');
-  console.log('Vendor count:', vendors.length);
-  
-  const container = document.querySelector('[data-vendor-container]') || document.getElementById('vendor').parentElement;
+  const container = document.getElementById('vendorContainer') || document.getElementById('vendor').parentElement;
   const currentVendor = document.getElementById('vendor');
+  if (currentVendor) currentVendor.remove();
   
-  // remove existing field
-  if (currentVendor) {
-    currentVendor.remove();
-  }
-  
-  if (vendors.length > 1) {
-    console.log('Creating dropdown for multiple vendors');
-    // multiple vendors - show dropdown
+  if (vendors.length > 0) {
     const select = document.createElement('select');
     select.id = 'vendor';
-    select.name = 'vendor';
-    select.className = 'flex-1 border border-gray-300 rounded px-3 py-2 focus:ring-2 focus:ring-blue-500';
+    select.className = 'w-full pl-4 pr-10 py-2 border border-blue-300 rounded-lg text-sm';
     
-    const defaultOption = document.createElement('option');
-    defaultOption.value = '';
-    defaultOption.textContent = 'Pilih Vendor...';
-    select.appendChild(defaultOption);
+    const defOpt = document.createElement('option');
+    defOpt.value = '';
+    defOpt.textContent = '-- Pilih Vendor --';
+    select.appendChild(defOpt);
     
-    vendors.forEach(vendor => {
-      const option = document.createElement('option');
-      option.value = vendor.vendor || '';
-      option.textContent = vendor.vendor || 'N/A';
-      option.dataset.vendorId = vendor.vendor_id || '';
-      option.dataset.contractAmount = vendor.contract_amount || 0;
-      select.appendChild(option);
+    vendors.forEach(v => {
+      const opt = document.createElement('option');
+      opt.value = v.vendor || v.name;
+      // Menambahkan hint nilai contract di sebelah nama
+      opt.textContent = `${v.vendor || v.name} (Hint: Rp ${finance(v.contract_amount || 0)})`;
+      opt.dataset.vendorId = v.vendor_id || v.id;
+      opt.dataset.contractAmount = v.contract_amount || 0;
+      select.appendChild(opt);
     });
 
-    // keep vendor_id in select dataset for easy access
     select.addEventListener('change', () => {
-      const selectedOpt = select.options[select.selectedIndex];
-      select.dataset.vendorId = selectedOpt?.dataset?.vendorId || '';
-      select.dataset.contractAmount = selectedOpt?.dataset?.contractAmount || 0;
-      const amt = unfinance(select.dataset.contractAmount || 0);
-      document.getElementById('project_amount').value = finance(amt);
-      console.log('Vendor selected:', {
-        vendor: select.value,
-        vendor_id: select.dataset.vendorId,
-        contract_amount: select.dataset.contractAmount
-      });
+      const selected = select.options[select.selectedIndex];
+      select.dataset.contractAmount = selected.dataset.contractAmount || 0;
+      select.dataset.vendorId = selected.dataset.vendorId || "";
+      document.getElementById('project_amount').value = finance(selected.dataset.contractAmount || 0);
+      calculateKonversi();
     });
-    
     container.appendChild(select);
-  } else if (vendors.length === 1) {
-    console.log('Creating readonly field for single vendor:', vendors[0].vendor);
-    // single vendor - show readonly input
-    const input = document.createElement('input');
-    input.type = 'text';
-    input.id = 'vendor';
-    input.name = 'vendor';
-    input.value = vendors[0].vendor || '';
-    input.className = 'flex-1 border border-yellow-400 bg-yellow-50 rounded px-3 py-2';
-    input.readOnly = true;
-    input.dataset.vendorId = vendors[0].vendor_id || '';
-    input.dataset.contractAmount = vendors[0].contract_amount || 0;
-    
-    const amt = unfinance(input.dataset.contractAmount || 0);
-    document.getElementById('project_amount').value = finance(amt);
-    container.appendChild(input);
   } else {
-    console.log('Creating manual input field (no vendors)');
-    // no vendors - show manual input
+    // Fallback input manual jika tidak ada data vendor project
     const input = document.createElement('input');
     input.type = 'text';
     input.id = 'vendor';
-    input.name = 'vendor';
-    input.placeholder = 'Nama vendor/supplier...';
-    input.className = 'flex-1 border border-gray-300 rounded px-3 py-2 focus:ring-2 focus:ring-blue-500';
-    
-    document.getElementById('project_amount').value = finance(0);
+    input.className = 'w-full pl-4 pr-10 py-2 border border-blue-300 rounded-lg text-sm';
+    input.placeholder = 'Ketik nama vendor...';
     container.appendChild(input);
+    setupVendorSearch(); // Aktifkan pencarian dinamis non-project
   }
 }
 
@@ -529,15 +465,15 @@ async function generateInvoiceNumber() {
   console.log('Project Number:', projectNumber);
   console.log('Invoice Date:', invDate);
   
-  if (!projectNumber || !invDate) {
-    console.log('Project number or invoice date not set - skipping generation');
+  if (!invDate) {
+    console.log('Invoice date not set - skipping generation');
     return;
   }
   
   try {
     const url = `${baseUrl}/generate/po_number`;
     const payload = {
-      project_number: projectNumber,
+      project_number: projectNumber || "0",
       inv_date: invDate
     };
     
@@ -569,7 +505,6 @@ async function generateInvoiceNumber() {
   }
 }
 
-// get data payload
 function getDataPayload() {
   const getVal = (id) => {
     const el = document.getElementById(id);
@@ -577,64 +512,114 @@ function getDataPayload() {
   };
 
   const ppnEnabled = document.getElementById("ppn_enabled")?.checked;
-  const pphEnabled = document.getElementById("pph_enabled")?.checked;
-
+  
+  // Ambil nilai mentah
+  const rawProjectId = getVal("project_id");
+  const rawProjectNumber = getVal("project_number");
+  const projectName = getVal("projectInput"); // FIXED: Definisi variabel agar tidak error
 
   const payload = {
     owner_id,
     user_id,
-    project_id: getVal("project_id"),
-    project_name: getVal("projectInput"),
-    project_number: getVal("project_number"),
+    // Tetap kirim 0 jika non-project sesuai instruksi revisi
+    project_id: (rawProjectId === "" || rawProjectId === "0") ? 0 : rawProjectId,
+    project_name: projectName || "Non-Project",
+    project_number: (rawProjectNumber === "" || rawProjectNumber === "0") ? 0 : rawProjectNumber,
+    
     vendor: getVal("vendor"),
     vendor_id: (() => {
       const vendorEl = document.getElementById("vendor");
-      if (!vendorEl) return "";
-      if (vendorEl.tagName === "SELECT") {
-        const opt = vendorEl.options[vendorEl.selectedIndex];
-        return opt?.dataset?.vendorId || "";
-      }
-      return vendorEl.dataset?.vendorId || "";
+      return vendorEl?.dataset?.vendorId || "";
     })(),
     po_number: getVal("vendor_po_number"),
     inv_number: getVal("invoice_number"),
     inv_date: getVal("invoice_date"),
     due_date: getVal("due_date"),
     payment_date: getVal("payment_date"),
-
     currency: getVal("currency"),
     rate: unfinance(getVal("rate")),
     nominal: unfinance(getVal("nominal")),
     total_converted: unfinance(getVal("total_converted")),
     total_inv: unfinance(getVal("total_invoice")),
-
     ppn_percent: ppnEnabled ? getVal("ppn_percent") : "0",
     ppn_nominal: ppnEnabled ? unfinance(getVal("ppn_nominal")) : 0,
-    pph_percent: pphEnabled ? getVal("pph_percent") : "0",
-    pph_nominal: pphEnabled ? unfinance(getVal("pph_nominal")) : 0,
+    pph_percent: "0",
+    pph_nominal: 0,
     total_inv_tax: unfinance(getVal("total_after_tax")),
-    coa_hpp:getVal("pph_list"),
-    coa_hutang_pajak: pphEnabled ? getSelectedPphCoaId() : 0,
-
+    coa_hpp: getVal("pph_list"),
+    coa_hutang_pajak: 0,
     description: getVal("description") || window.detail_desc || "",
   };
 
-  console.log("=== PAYABLE FORM PAYLOAD PREVIEW ===", {
-    ...payload,
-    vendor_contract_amount:
-      document.getElementById("vendor")?.dataset?.contractAmount || 0,
-  });
-
-  if (!payload.project_id) {
-    Swal.fire("Warning", "Project belum dipilih!", "warning");
-    return null;
-  }
   if (!payload.inv_date) {
     Swal.fire("Warning", "Tanggal Invoice wajib diisi!", "warning");
     return null;
   }
 
   return payload;
+}
+
+// Tambahkan listener pada input vendor untuk search dinamis (Non-Project)
+function setupVendorSearch() {
+  const input = document.getElementById("vendor");
+  const suggestionsBox = document.getElementById("vendorSuggestions");
+  let searchTimeout;
+
+  if (!input) return;
+
+  input.addEventListener("input", function () {
+    // Jika project_id terisi, gunakan logic loadVendorsForProject (revisi poin 1 & 3)
+    const projectId = document.getElementById("project_id").value;
+    if (projectId && projectId !== "0") return;
+
+    const query = this.value;
+    clearTimeout(searchTimeout);
+
+    if (query.length < 2) {
+      suggestionsBox?.classList.add("hidden");
+      return;
+    }
+
+    searchTimeout = setTimeout(async () => {
+      try {
+        // Endpoint dinamis sesuai revisi
+        const url = `${baseUrl}/table/vendor/${owner_id}/1?search=${encodeURIComponent(query)}`;
+        const response = await fetch(url, {
+          headers: { Authorization: `Bearer ${API_TOKEN}` },
+        });
+        const result = await response.json();
+        const vendors = result.tableData || [];
+
+        if (suggestionsBox) {
+          suggestionsBox.innerHTML = "";
+          if (vendors.length > 0) {
+            suggestionsBox.classList.remove("hidden");
+            vendors.forEach((v) => {
+              const li = document.createElement("li");
+              li.className = "px-4 py-2 hover:bg-blue-100 cursor-pointer border-b text-sm";
+              // REVISI POIN 1: Menampilkan hint contract_amount
+              li.innerHTML = `
+                <div class="font-bold text-gray-800">${v.nama || v.name}</div>
+                <div class="text-xs text-blue-500">Contract: Rp ${finance(v.contract_amount || 0)}</div>
+              `;
+              li.onclick = () => {
+                input.value = v.nama || v.name;
+                input.dataset.vendorId = v.vendor_id || v.id;
+                input.dataset.contractAmount = v.contract_amount || 0;
+                document.getElementById('project_amount').value = finance(v.contract_amount || 0);
+                suggestionsBox.classList.add("hidden");
+              };
+              suggestionsBox.appendChild(li);
+            });
+          } else {
+            suggestionsBox.classList.add("hidden");
+          }
+        }
+      } catch (error) {
+        console.error(error);
+      }
+    }, 400);
+  });
 }
 
 // submit data
