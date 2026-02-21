@@ -43,7 +43,7 @@ async function loadPphList() {
   }
 }
 
-async function loadHppList() {
+async function loadHppList(type = 'coa_bua') {
   const select = document.getElementById('pph_list');
   if (!select) return;
 
@@ -51,8 +51,8 @@ async function loadHppList() {
   select.disabled = true;
 
   try {
-    // Endpoint diubah menjadi list/coa_bua sesuai permintaan revisi
-    const res = await fetch(`${baseUrl}/list/coa_bua/${owner_id}`, {
+    // Endpoint dinamis berdasarkan parameter type
+    const res = await fetch(`${baseUrl}/list/${type}/${owner_id}`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${API_TOKEN}`,
@@ -288,6 +288,7 @@ async function selectProject(data) {
   document.getElementById("total_invoice").value = "";
   document.getElementById("ppn_nominal").value = "0";
   document.getElementById("total_after_tax").value = "0";
+  loadHppList('coa_hpp');
   
   // load vendors for this project
   await loadVendorsForProject(data.project_id);
@@ -398,7 +399,7 @@ function setupVendorField(vendors) {
       const opt = document.createElement('option');
       opt.value = v.vendor || v.name;
       // Menambahkan hint nilai contract di sebelah nama
-      opt.textContent = `${v.vendor || v.name} (Hint: Rp ${finance(v.contract_amount || 0)})`;
+      opt.textContent = `${v.vendor || v.name} (Rp ${finance(v.contract_amount || 0)})`;
       opt.dataset.vendorId = v.vendor_id || v.id;
       opt.dataset.contractAmount = v.contract_amount || 0;
       select.appendChild(opt);
@@ -570,7 +571,10 @@ function setupVendorSearch() {
   input.addEventListener("input", function () {
     // Jika project_id terisi, gunakan logic loadVendorsForProject (revisi poin 1 & 3)
     const projectId = document.getElementById("project_id").value;
-    if (projectId && projectId !== "0") return;
+    if (!projectId || projectId === "0") {
+        // Cek jika list belum coa_bua (opsional, untuk optimasi)
+        loadHppList('coa_bua');
+    }
 
     const query = this.value;
     clearTimeout(searchTimeout);
