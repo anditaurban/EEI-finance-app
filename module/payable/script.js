@@ -50,6 +50,9 @@ window.rowTemplate = function (item, index, perPage = 10) {
     statusBadgeClass = "bg-blue-100 text-blue-700 border border-blue-300";
   }
 
+  const isPaid = item.status === "Terbayar" || item.status === "Partial Paid";
+    const safeDesc = (item.description || "").replace(/'/g, "\\'");
+
   // B. Financial Logic & Booleans
   const isDebit = item.transaction_type === "debit";
   const hasPPN  = item.ppn_nominal && parseFloat(item.ppn_nominal) !== 0;
@@ -152,19 +155,13 @@ window.rowTemplate = function (item, index, perPage = 10) {
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
           </button>
           
-          <button onclick="event.stopPropagation(); handlePayment(
-                '${item.payable_id}', 
-                '${safeProjectName}', 
-                '${item.total_inv}', 
-                '${(item.description || "").replace(/'/g, "\\'")}', 
-                ${item.ppn_percent || 0},
-                '${item.status}'
-            );"
-            class="group/btn text-gray-400 hover:text-blue-600 p-1.5 rounded-lg hover:bg-blue-50 transition" title="Input Payment">
+          <button onclick="event.stopPropagation(); ${isPaid ? `viewPayment('${item.payable_id}', '${safeProjectName}')` : `handlePayment('${item.payable_id}', '${safeProjectName}', '${item.total_inv}', '${safeDesc}', ${item.ppn_percent || 0})`}" 
+            class="group/btn text-gray-400 hover:text-blue-600 p-1.5 rounded-lg hover:bg-blue-50 transition" 
+            title="${isPaid ? 'Lihat Riwayat Bayar' : 'Input Payment'}">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/>
             </svg>
-          </button>
+        </button>
           
           <button onclick="event.stopPropagation(); handleDelete(${item.payable_id})" 
             class="group/btn text-gray-400 hover:text-red-600 p-1.5 rounded-lg hover:bg-red-50 transition" title="Delete">
@@ -294,110 +291,24 @@ async function openCustomFilter() {
 }
 
 /**
- * Fungsi Input/View Pembayaran Hutang
- * Revisi: Menampilkan detail jika sudah terbayar, menampilkan form jika belum.
+ * Fungsi Input & Edit Pembayaran
+ * Perbaikan: Otomatis set value Bank dan PPh saat edit
  */
-async function handlePayment(payableId, projectName, nominal, description, ppnPercent, status) {
-    // 1. LOGIKA VIEW DETAIL (Jika Status Terbayar)
-    if (status === "Terbayar") {
-        Swal.fire({
-            title: 'Memuat Detail Pembayaran...',
-            allowOutsideClick: false,
-            didOpen: () => Swal.showLoading()
-        });
-
-        try {
-            const res = await fetch(`${baseUrl}/table/account_payment/${payableId}/1`, {
-                headers: { 'Authorization': `Bearer ${API_TOKEN}` }
-            });
-            const result = await res.json();
-            const data = result.tableData ? result.tableData[0] : null;
-
-            if (!data) throw new Error("Data pembayaran tidak ditemukan.");
-
-            const finance = (n) => new Intl.NumberFormat("id-ID").format(parseFloat(n) || 0);
-
-            Swal.fire({
-                title: `<span class="text-xl font-bold text-blue-600">Detail Pembayaran</span>`,
-                html: `
-                    <div class="text-left text-sm space-y-4 p-2">
-                        <div class="bg-blue-50 p-3 rounded-lg border border-blue-100">
-                            <p class="text-[10px] uppercase font-bold text-blue-400">Project / Deskripsi</p>
-                            <p class="font-semibold text-gray-800">${projectName && projectName !== '-' ? projectName : data.description}</p>
-                        </div>
-                        
-                        <div class="grid grid-cols-2 gap-4">
-                            <div>
-                                <p class="text-[10px] uppercase font-bold text-gray-400">No. Pembayaran</p>
-                                <p class="font-mono font-medium">${data.payment_number}</p>
-                            </div>
-                            <div>
-                                <p class="text-[10px] uppercase font-bold text-gray-400">Tanggal Bayar</p>
-                                <p class="font-medium">${data.payment_date}</p>
-                            </div>
-                        </div>
-
-                        <hr class="border-dashed">
-
-                        <div class="space-y-2">
-                            <div class="flex justify-between">
-                                <span class="text-gray-500">Nominal Dasar</span>
-                                <span class="font-mono">IDR ${finance(data.total_inv_tax - data.ppn_nominal)}</span>
-                            </div>
-                            <div class="flex justify-between text-emerald-600 font-medium">
-                                <span>PPN (${data.ppn_percent}%)</span>
-                                <span class="font-mono">+ ${finance(data.ppn_nominal)}</span>
-                            </div>
-                            <div class="flex justify-between text-red-500 font-medium">
-                                <span>PPh (${data.pph_percent}%)</span>
-                                <span class="font-mono">- ${finance(data.pph_nominal)}</span>
-                            </div>
-                            <div class="flex justify-between border-t pt-2 font-bold text-lg text-blue-700">
-                                <span>Total Dibayar</span>
-                                <span class="font-mono">IDR ${finance(data.total_payment)}</span>
-                            </div>
-                        </div>
-
-                        <div class="pt-2">
-                            <p class="text-[10px] uppercase font-bold text-gray-400 mb-1">Keterangan</p>
-                            <p class="text-gray-700 italic bg-gray-50 p-2 rounded border">${data.description || '-'}</p>
-                        </div>
-
-                        ${data.file ? `
-                        <div class="pt-2">
-                            <a href="${data.file}" target="_blank" class="flex items-center justify-center gap-2 w-full py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition font-medium text-xs">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.414a4 4 0 00-5.656-5.656l-6.415 6.414a6 6 0 108.486 8.486L20.5 13" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
-                                Lihat Bukti Pembayaran
-                            </a>
-                        </div>` : ''}
-                    </div>
-                `,
-                confirmButtonText: 'Tutup',
-                confirmButtonColor: '#3b82f6',
-                width: '500px'
-            });
-        } catch (error) {
-            Swal.fire('Error', error.message, 'error');
-        }
-        return; // Hentikan eksekusi agar tidak memunculkan form input
-    }
-
-    // 2. LOGIKA INPUT FORM (Jika Belum Terbayar)
+async function handlePayment(payableId, projectName, nominal, description, ppnPercent, paymentId = null) {
+    const isEdit = paymentId !== null;
     const displayProject = (projectName && projectName !== "-" && projectName !== "") 
-        ? projectName 
-        : (description || "Tanpa Keterangan");
+        ? projectName : (description || "Tanpa Keterangan");
 
-    Swal.fire({
-        title: 'Memuat Data...',
-        allowOutsideClick: false,
-        didOpen: () => Swal.showLoading()
-    });
+    Swal.fire({ title: 'Memuat Data...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
+    // Variabel untuk menampung data lama jika mode edit
+    let existingData = null;
     let bankOptions = '<option value="" disabled selected>-- Pilih Bank --</option>';
     let pphOptions = '<option value="0" data-coa-id="0">-- Pilih Jenis PPh --</option>';
     let currencyOptions = '';
 
     try {
+        // 1. Fetch referensi list bank dan pajak
         const [bankRes, pphRes, currListRes] = await Promise.all([
             fetch(`${baseUrl}/list/coa_bank/${owner_id}`, { headers: { 'Authorization': `Bearer ${API_TOKEN}` } }),
             fetch(`${baseUrl}/list/coa_hutang_pajak/${owner_id}`, { headers: { 'Authorization': `Bearer ${API_TOKEN}` } }),
@@ -408,28 +319,39 @@ async function handlePayment(payableId, projectName, nominal, description, ppnPe
         const pphData = await pphRes.json();
         const currListData = await currListRes.json();
 
+        // 2. Jika mode edit, ambil detail transaksi spesifik untuk mendapatkan ID Bank & PPh yang tepat
+        if (isEdit) {
+            const detailRes = await fetch(`${baseUrl}/table/account_payment/${payableId}/1`, {
+                headers: { 'Authorization': `Bearer ${API_TOKEN}` }
+            });
+            const detailJson = await detailRes.json();
+            existingData = detailJson.tableData.find(p => p.payment_id == paymentId);
+        }
+
+        // 3. Generate Options
         if (bankData.listData) {
             bankData.listData.forEach(bank => {
-                bankOptions += `<option value="${bank.coa_id}">${bank.name} - ${bank.code}</option>`;
+                const isSelected = existingData && existingData.coa_bank == bank.coa_id ? 'selected' : '';
+                bankOptions += `<option value="${bank.coa_id}" ${isSelected}>${bank.name} - ${bank.code}</option>`;
             });
         }
         if (pphData.listData) {
             pphData.listData.forEach(pph => {
-                pphOptions += `<option value="${pph.value}" data-coa-id="${pph.coa_id}">${pph.name} (${pph.value}%)</option>`;
+                const isSelected = existingData && existingData.pph_percent == pph.value ? 'selected' : '';
+                pphOptions += `<option value="${pph.value}" data-coa-id="${pph.coa_id}" ${isSelected}>${pph.name} (${pph.value}%)</option>`;
             });
         }
-        if (currListData && currListData.rates) {
+        if (currListData?.rates) {
             Object.keys(currListData.rates).sort().forEach(code => {
-                currencyOptions += `<option value="${code}" ${code === 'IDR' ? 'selected' : ''}>${code}</option>`;
+                const isSelected = (existingData && existingData.currency == code) || (!existingData && code === 'IDR') ? 'selected' : '';
+                currencyOptions += `<option value="${code}" ${isSelected}>${code}</option>`;
             });
         }
         Swal.close();
     } catch (error) {
-        Swal.fire('Error', 'Gagal memuat data: ' + error.message, 'error');
-        return;
+        Swal.fire('Error', 'Gagal memuat referensi data.', 'error'); return;
     }
 
-    // Form HTML tetap sama seperti sebelumnya (sesuai request user sebelumnya)
     const formHtml = `
         <form id="swal-payment-form" class="text-left text-sm text-gray-700">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -440,11 +362,11 @@ async function handlePayment(payableId, projectName, nominal, description, ppnPe
                     </div>
                     <div>
                         <label class="block font-semibold mb-1 text-xs text-gray-500 uppercase">No. Pembayaran</label>
-                        <input type="text" id="payment_number" class="w-full px-3 py-2 border rounded bg-gray-50 font-mono" readonly>
+                        <input type="text" id="payment_number" class="w-full px-3 py-2 border rounded bg-gray-50 font-mono" value="${existingData?.payment_number || ''}" ${isEdit ? '' : 'readonly'}>
                     </div>
                     <div>
                         <label class="block font-semibold mb-1 text-xs text-gray-500 uppercase">Tanggal</label>
-                        <input type="date" id="payment_date" class="w-full px-3 py-2 border rounded" value="${new Date().toISOString().split('T')[0]}" onchange="updatePaymentNumber(this.value)">
+                        <input type="date" id="payment_date" class="w-full px-3 py-2 border rounded" value="${existingData?.payment_date || new Date().toISOString().split('T')[0]}" onchange="updatePaymentNumber(this.value)">
                     </div>
                     <div class="grid grid-cols-2 gap-2">
                         <div>
@@ -453,7 +375,7 @@ async function handlePayment(payableId, projectName, nominal, description, ppnPe
                         </div>
                         <div>
                             <label class="block font-semibold mb-1 text-xs text-gray-500 uppercase">Rate</label>
-                            <input type="text" id="rate" class="w-full px-3 py-2 border rounded font-mono" value="1" oninput="formatRate(this); calculateTotals();">
+                            <input type="text" id="rate" class="w-full px-3 py-2 border rounded font-mono" value="${existingData?.rate || 1}" oninput="formatRate(this); calculateTotals();">
                         </div>
                     </div>
                 </div>
@@ -467,7 +389,7 @@ async function handlePayment(payableId, projectName, nominal, description, ppnPe
                     <div class="grid grid-cols-3 gap-2 items-end">
                         <div class="col-span-1">
                             <label class="block font-semibold mb-1 text-xs text-gray-500 uppercase">PPN (%)</label>
-                            <input type="number" id="ppn_percent" class="w-full px-3 py-2 border rounded text-center" value="${ppnPercent || 0}" oninput="calculateTotals()">
+                            <input type="number" id="ppn_percent" class="w-full px-3 py-2 border rounded text-center" value="${existingData?.ppn_percent || ppnPercent || 0}" oninput="calculateTotals()">
                         </div>
                         <div class="col-span-2">
                             <label class="block font-semibold mb-1 text-xs text-gray-500 uppercase">Nominal PPN (IDR)</label>
@@ -478,23 +400,17 @@ async function handlePayment(payableId, projectName, nominal, description, ppnPe
                         <label class="block font-semibold mb-1 text-xs text-gray-500 uppercase">Potongan PPh</label>
                         <select id="coa_pph" class="w-full px-3 py-2 border rounded mb-2" onchange="calculateTotals()">${pphOptions}</select>
                         <div class="grid grid-cols-3 gap-2 items-center">
-                            <div class="col-span-1">
-                                <input type="text" id="pph_percent_display" class="w-full px-3 py-2 bg-gray-50 border rounded text-center" value="0" readonly>
-                            </div>
-                            <div class="col-span-2">
-                                <input type="text" id="pph_nominal_display" class="w-full px-3 py-2 bg-gray-50 border rounded" readonly>
-                            </div>
+                            <div class="col-span-1"><input type="text" id="pph_percent_display" class="w-full px-3 py-2 bg-gray-50 border rounded text-center text-xs font-bold" readonly></div>
+                            <div class="col-span-2"><input type="text" id="pph_nominal_display" class="w-full px-3 py-2 bg-gray-50 border rounded text-xs font-bold" readonly></div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <hr class="my-5">
-
-            <div class="grid grid-cols-2 gap-4 mb-4">
+            <div class="grid grid-cols-2 gap-4 mt-6">
                 <div>
-                    <label class="block font-semibold mb-1 text-gray-400 text-[10px] uppercase">Total Tagihan (Inc. Tax)</label>
-                    <input type="text" id="total_inv_tax_display" class="w-full px-3 py-2 bg-gray-100 border rounded font-medium" readonly>
+                    <label class="block font-semibold mb-1 text-[10px] text-gray-400 uppercase">Total Tagihan (Inc. Tax)</label>
+                    <input type="text" id="total_inv_tax_display" class="w-full px-3 py-2 bg-gray-50 border rounded font-medium" readonly>
                 </div>
                 <div>
                     <label class="block font-semibold text-blue-600 mb-1 text-[10px] uppercase text-right">Total Dibayar (Net)</label>
@@ -502,63 +418,32 @@ async function handlePayment(payableId, projectName, nominal, description, ppnPe
                 </div>
             </div>
 
+            
             <div class="space-y-3">
-                <div><label class="block font-semibold mb-1 text-xs text-gray-500 uppercase tracking-wider">Keterangan</label><textarea id="description_input" class="w-full px-3 py-2 border rounded" rows="2">${description || ''}</textarea></div>
+                <div class="mt-4"><label class="block font-semibold mb-1 text-xs text-gray-500 uppercase">Keterangan</label><textarea id="description_input" class="w-full px-3 py-2 border rounded" rows="2" placeholder="Keterangan...">${existingData?.description || description || ''}</textarea></div>
                 <div>
-                    <label class="block font-semibold mb-1 text-xs text-gray-500 uppercase tracking-wider">Bukti Pembayaran</label>
+                    <label class="block font-semibold mb-1 text-xs text-gray-500 uppercase">Bukti Transfer</label>
                     <input type="file" id="file_upload" class="w-full px-3 py-2 border rounded bg-white w-full">
                 </div>
             </div>
         </form>
     `;
 
-    const inputResult = await Swal.fire({
-        title: `<span class="text-xl font-bold">Input Pembayaran</span>`,
-        html: `<div class="mb-4 text-gray-600">Project: <span class="font-semibold text-blue-600">${displayProject}</span></div>${formHtml}`,
+    const result = await Swal.fire({
+        title: `<div class="text-center text-xl font-bold">${isEdit ? 'Edit' : 'Input'} Pembayaran</div>`,
+        html: `<div class="text-center mb-4 text-sm text-gray-500 border-b pb-2">Project: <span class="text-blue-600 font-bold">${displayProject}</span></div>${formHtml}`,
         width: '800px',
         showCancelButton: true,
         confirmButtonText: 'Simpan Pembayaran',
-        cancelButtonText: 'Batal',
-        confirmButtonColor: '#3b82f6',
-        cancelButtonColor: '#ef4444',
         didOpen: () => {
             const finance = (n) => new Intl.NumberFormat("id-ID").format(parseFloat(n) || 0);
             const unfinance = (s) => parseFloat(s.toString().replace(/[^0-9]/g, '')) || 0;
 
-            window.formatNominal = (el) => {
-                let val = unfinance(el.value);
-                el.value = finance(val);
-                document.getElementById('input_nominal_raw').value = val;
-            };
-
-            window.formatRate = (el) => {
-                let val = unfinance(el.value);
-                el.value = finance(val);
-            };
-
-            window.autoSetRate = async (curr) => {
-                const rateInput = document.getElementById('rate');
-                if (curr === "IDR") {
-                    rateInput.value = "1";
-                    rateInput.readOnly = true;
-                    rateInput.classList.add('bg-gray-100');
-                } else {
-                    rateInput.value = "Memuat...";
-                    rateInput.readOnly = false;
-                    rateInput.classList.remove('bg-gray-100');
-                    try {
-                        const res = await fetch(`https://hexarate.paikama.co/api/rates/latest/${curr}?target=IDR`);
-                        const data = await res.json();
-                        rateInput.value = data.status_code === 200 ? finance(Math.round(data.data.mid)) : "0";
-                    } catch (e) { rateInput.value = "0"; }
-                }
-                window.calculateTotals();
-            };
-
             window.calculateTotals = () => {
                 const nominalAsing = unfinance(document.getElementById('input_nominal_display').value);
                 const rate = unfinance(document.getElementById('rate').value) || 1;
-                const totalIDR = nominalAsing * rate; 
+                const totalIDR = nominalAsing * rate;
+                
                 const ppnPct = parseFloat(document.getElementById('ppn_percent').value) || 0;
                 const pphSel = document.getElementById('coa_pph');
                 const pphPct = parseFloat(pphSel.value) || 0;
@@ -573,11 +458,17 @@ async function handlePayment(payableId, projectName, nominal, description, ppnPe
                 document.getElementById('total_payment_display').value = finance(totalIDR - pphNominal);
             };
 
+            window.formatNominal = (el) => {
+                let val = unfinance(el.value);
+                el.value = finance(val);
+                document.getElementById('input_nominal_raw').value = val;
+            };
+
             window.updatePaymentNumber = async (date) => {
+                if(isEdit) return;
                 try {
                     const res = await fetch(`${baseUrl}/generate/payment_number`, { 
-                        method: "POST", 
-                        headers: { "Authorization": `Bearer ${API_TOKEN}`, "Content-Type": "application/json" }, 
+                        method: "POST", headers: { "Authorization": `Bearer ${API_TOKEN}`, "Content-Type": "application/json" }, 
                         body: JSON.stringify({ payment_date: date }) 
                     });
                     const data = await res.json();
@@ -585,57 +476,137 @@ async function handlePayment(payableId, projectName, nominal, description, ppnPe
                 } catch(e) {}
             };
 
-            const initVal = parseFloat(nominal) || 0;
-            document.getElementById('input_nominal_display').value = finance(initVal);
-            document.getElementById('input_nominal_raw').value = initVal;
-            updatePaymentNumber(document.getElementById('payment_date').value);
-            autoSetRate('IDR');
+            // Inisialisasi awal nominal
+            const baseValue = isEdit ? existingData.nominal : (parseFloat(nominal) || 0);
+            document.getElementById('input_nominal_display').value = finance(baseValue);
+            document.getElementById('input_nominal_raw').value = baseValue;
+
+            if(!isEdit) updatePaymentNumber(document.getElementById('payment_date').value);
+            calculateTotals();
         },
         preConfirm: async () => {
             const clean = (id) => document.getElementById(id).value.replace(/[^0-9]/g, '');
             const pphSel = document.getElementById('coa_pph');
-            const coaId = pphSel.options[pphSel.selectedIndex].dataset.coaId;
+            const coaPajakId = pphSel.options[pphSel.selectedIndex].dataset.coaId;
 
-            const formData = new FormData();
-            formData.append('owner_id', owner_id);
-            formData.append('user_id', user_id);
-            formData.append('payable_id', payableId);
-            formData.append('coa_bank', document.getElementById('coa_bank').value);
-            formData.append('payment_number', document.getElementById('payment_number').value);
-            formData.append('payment_date', document.getElementById('payment_date').value);
-            formData.append('currency', document.getElementById('currency').value);
-            formData.append('rate', clean('rate'));
-            formData.append('nominal', document.getElementById('input_nominal_raw').value);
-            formData.append('total_inv', document.getElementById('input_nominal_raw').value);
-            formData.append('ppn_percent', document.getElementById('ppn_percent').value);
-            formData.append('ppn_nominal', clean('ppn_nominal_display'));
-            formData.append('coa_hutang_pajak', coaId); // Sesuai permintaan di gambar 1
-            formData.append('pph_percent', document.getElementById('pph_percent_display').value);
-            formData.append('pph_nominal', clean('pph_nominal_display'));
-            formData.append('total_inv_tax', clean('total_inv_tax_display'));
-            formData.append('total_payment', clean('total_payment_display'));
-            formData.append('description', document.getElementById('description_input').value);
+            const fd = new FormData();
+            fd.append('owner_id', owner_id);
+            fd.append('user_id', user_id);
+            fd.append('payable_id', payableId);
+            fd.append('coa_bank', document.getElementById('coa_bank').value);
+            fd.append('payment_number', document.getElementById('payment_number').value);
+            fd.append('payment_date', document.getElementById('payment_date').value);
+            fd.append('currency', document.getElementById('currency').value);
+            fd.append('rate', clean('rate'));
+            fd.append('nominal', document.getElementById('input_nominal_raw').value);
+            fd.append('ppn_percent', document.getElementById('ppn_percent').value);
+            fd.append('ppn_nominal', clean('ppn_nominal_display'));
+            fd.append('coa_hutang_pajak', coaPajakId); // Kirim COA ID Pajak
+            fd.append('pph_percent', document.getElementById('pph_percent_display').value);
+            fd.append('pph_nominal', clean('pph_nominal_display'));
+            fd.append('total_inv_tax', clean('total_inv_tax_display'));
+            fd.append('total_payment', clean('total_payment_display'));
+            fd.append('description', document.getElementById('description_input').value);
 
-            const fileInput = document.getElementById('file_upload');
-            if (fileInput.files.length > 0) formData.append('file', fileInput.files[0]);
+            const file = document.getElementById('file_upload').files[0];
+            if (file) fd.append('file', file);
 
             try {
-                const response = await fetch(`${baseUrl}/add/account_payment`, { 
-                    method: 'POST', 
+                // Sesuai revisi method: PUT untuk Edit, POST untuk Add
+                const url = isEdit ? `${baseUrl}/update/account_payment/${paymentId}` : `${baseUrl}/add/account_payment`;
+                const method = isEdit ? 'PUT' : 'POST';
+
+                const r = await fetch(url, { 
+                    method: method, 
                     headers: { 'Authorization': `Bearer ${API_TOKEN}` }, 
-                    body: formData 
+                    body: fd 
                 });
-                const data = await response.json();
-                if (!response.ok) throw new Error(data.message || 'Server Error');
-                return data;
+                
+                const responseJson = await r.json();
+                if (!r.ok) throw new Error(responseJson.message || "Gagal menyimpan data.");
+                return responseJson;
             } catch (e) { 
-                Swal.showValidationMessage(`Gagal: ${e.message}`); 
+                Swal.showValidationMessage(e.message); 
             }
         }
     });
 
-    if (inputResult.isConfirmed) {
-        Swal.fire({ icon: 'success', title: 'Berhasil', text: 'Pembayaran tersimpan.', timer: 1500, showConfirmButton: false });
-        if (typeof fetchAndUpdateData === 'function') fetchAndUpdateData();
+    if (result.isConfirmed) {
+        Swal.fire({ icon: 'success', title: 'Berhasil', timer: 1000, showConfirmButton: false });
+        if (isEdit) viewPayment(payableId, projectName); 
+        fetchAndUpdateData(); 
+    }
+}
+
+async function viewPayment(payableId, projectName) {
+    Swal.fire({ title: 'Memuat Riwayat...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+    try {
+        const res = await fetch(`${baseUrl}/table/account_payment/${payableId}/1`, { //
+            headers: { 'Authorization': `Bearer ${API_TOKEN}` }
+        });
+        const result = await res.json();
+        const payments = result.tableData || [];
+
+        const finance = (n) => new Intl.NumberFormat("id-ID").format(parseFloat(n) || 0);
+
+        let tableRows = payments.map((p, index) => `
+            <tr class="border-b text-xs hover:bg-gray-50">
+                <td class="p-3 text-center">${index + 1}</td>
+                <td class="p-3 font-mono text-blue-600">${p.payment_number}</td>
+                <td class="p-3">${p.payment_date}</td>
+                <td class="p-3">${p.bank_name || '-'}</td>
+                <td class="p-3 font-bold text-right">${finance(p.total_payment)}</td>
+                <td class="p-3 text-center">
+                    <div class="flex gap-3 justify-center">
+                        <button onclick="handlePayment('${payableId}', '${projectName.replace(/'/g, "\\'")}', '${p.nominal}', '${(p.description || "").replace(/'/g, "\\'")}', ${p.ppn_percent}, '${p.payment_id}')" class="text-blue-500 hover:text-blue-700 font-medium font-bold">Edit</button>
+                        <button onclick="deletePayment('${p.payment_id}', '${payableId}', '${projectName.replace(/'/g, "\\'")}')" class="text-red-500 hover:text-red-700 font-medium font-bold">Hapus</button>
+                    </div>
+                </td>
+            </tr>`).join('');
+
+        Swal.fire({
+            title: `<span class="text-lg font-bold">Riwayat Pembayaran</span>`,
+            html: `
+                <div class="text-left mb-4 p-3 bg-blue-50 rounded-lg border border-blue-100">
+                    <p class="text-[10px] uppercase font-bold text-blue-400">Project / Description</p>
+                    <p class="text-sm font-semibold text-gray-700">${projectName}</p>
+                </div>
+                <div class="overflow-x-auto border rounded-lg">
+                    <table class="w-full text-left border-collapse">
+                        <thead class="bg-gray-100 text-[10px] uppercase text-gray-600">
+                            <tr><th class="p-3 text-center">No</th><th class="p-3">Ref No</th><th class="p-3">Tanggal</th><th class="p-3">Bank</th><th class="p-3 text-right">Total</th><th class="p-3 text-center">Aksi</th></tr>
+                        </thead>
+                        <tbody>${tableRows || '<tr><td colspan="6" class="p-8 text-center text-gray-400 italic">Belum ada riwayat pembayaran</td></tr>'}</tbody>
+                    </table>
+                </div>
+                <div class="mt-4 flex justify-end">
+                    <button onclick="handlePayment('${payableId}', '${projectName.replace(/'/g, "\\'")}', '0', '', 0)" class="bg-emerald-600 text-white px-4 py-2 rounded text-xs font-bold hover:bg-emerald-700 shadow-sm transition">+ Tambah Cicilan</button>
+                </div>`,
+            width: '850px', showConfirmButton: false, showCloseButton: true
+        });
+    } catch (e) { Swal.fire('Error', 'Gagal memuat data riwayat.', 'error'); }
+}
+
+async function deletePayment(paymentId, payableId, projectName) {
+    const confirm = await Swal.fire({
+        title: 'Hapus pembayaran ini?',
+        text: "Saldo hutang akan dikembalikan seperti semula.",
+        icon: 'warning', showCancelButton: true, confirmButtonColor: '#ef4444'
+    });
+
+    if (confirm.isConfirmed) {
+        try {
+            const r = await fetch(`${baseUrl}/delete/account_payment/${paymentId}`, {
+                method: 'PUT', // Method diubah menjadi PUT sesuai instruksi
+                headers: { 'Authorization': `Bearer ${API_TOKEN}`, 'Content-Type': 'application/json' }
+            });
+            
+            if (r.ok) {
+                Swal.fire('Terhapus!', 'Pembayaran telah dibatalkan.', 'success');
+                viewPayment(payableId, projectName);
+                fetchAndUpdateData();
+            } else { throw new Error(); }
+        } catch (e) { Swal.fire('Error', 'Gagal memproses penghapusan.', 'error'); }
     }
 }
