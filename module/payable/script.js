@@ -301,14 +301,12 @@ async function handlePayment(payableId, projectName, nominal, description, ppnPe
 
     Swal.fire({ title: 'Memuat Data...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
-    // Variabel untuk menampung data lama jika mode edit
     let existingData = null;
     let bankOptions = '<option value="" disabled selected>-- Pilih Bank --</option>';
     let pphOptions = '<option value="0" data-coa-id="0">-- Pilih Jenis PPh --</option>';
     let currencyOptions = '';
 
     try {
-        // 1. Fetch referensi list bank dan pajak
         const [bankRes, pphRes, currListRes] = await Promise.all([
             fetch(`${baseUrl}/list/coa_bank/${owner_id}`, { headers: { 'Authorization': `Bearer ${API_TOKEN}` } }),
             fetch(`${baseUrl}/list/coa_hutang_pajak/${owner_id}`, { headers: { 'Authorization': `Bearer ${API_TOKEN}` } }),
@@ -319,16 +317,16 @@ async function handlePayment(payableId, projectName, nominal, description, ppnPe
         const pphData = await pphRes.json();
         const currListData = await currListRes.json();
 
-        // 2. Jika mode edit, ambil detail transaksi spesifik untuk mendapatkan ID Bank & PPh yang tepat
         if (isEdit) {
             const detailRes = await fetch(`${baseUrl}/table/account_payment/${payableId}/1`, {
                 headers: { 'Authorization': `Bearer ${API_TOKEN}` }
             });
             const detailJson = await detailRes.json();
+            // Pastikan data ditemukan berdasarkan paymentId
             existingData = detailJson.tableData.find(p => p.payment_id == paymentId);
         }
 
-        // 3. Generate Options
+        // Generate Options dengan logika Selected
         if (bankData.listData) {
             bankData.listData.forEach(bank => {
                 const isSelected = existingData && existingData.coa_bank == bank.coa_id ? 'selected' : '';
@@ -337,7 +335,8 @@ async function handlePayment(payableId, projectName, nominal, description, ppnPe
         }
         if (pphData.listData) {
             pphData.listData.forEach(pph => {
-                const isSelected = existingData && existingData.pph_percent == pph.value ? 'selected' : '';
+                // Perbaikan: Bandingkan coa_id jika pph_percent sama
+                const isSelected = existingData && (existingData.pph_percent == pph.value) ? 'selected' : '';
                 pphOptions += `<option value="${pph.value}" data-coa-id="${pph.coa_id}" ${isSelected}>${pph.name} (${pph.value}%)</option>`;
             });
         }
@@ -352,97 +351,103 @@ async function handlePayment(payableId, projectName, nominal, description, ppnPe
         Swal.fire('Error', 'Gagal memuat referensi data.', 'error'); return;
     }
 
-    const formHtml = `
-        <form id="swal-payment-form" class="text-left text-sm text-gray-700">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div class="space-y-3">
-                    <div>
-                        <label class="block font-semibold mb-1 text-xs text-gray-500 uppercase">Bank Pengirim / Kas</label>
-                        <select id="coa_bank" class="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500">${bankOptions}</select>
-                    </div>
-                    <div>
-                        <label class="block font-semibold mb-1 text-xs text-gray-500 uppercase">No. Pembayaran</label>
-                        <input type="text" id="payment_number" class="w-full px-3 py-2 border rounded bg-gray-50 font-mono" value="${existingData?.payment_number || ''}" ${isEdit ? '' : 'readonly'}>
-                    </div>
-                    <div>
-                        <label class="block font-semibold mb-1 text-xs text-gray-500 uppercase">Tanggal</label>
-                        <input type="date" id="payment_date" class="w-full px-3 py-2 border rounded" value="${existingData?.payment_date || new Date().toISOString().split('T')[0]}" onchange="updatePaymentNumber(this.value)">
-                    </div>
-                    <div class="grid grid-cols-2 gap-2">
-                        <div>
-                            <label class="block font-semibold mb-1 text-xs text-gray-500 uppercase">Mata Uang</label>
-                            <select id="currency" class="w-full px-3 py-2 border rounded" onchange="autoSetRate(this.value)">${currencyOptions}</select>
-                        </div>
-                        <div>
-                            <label class="block font-semibold mb-1 text-xs text-gray-500 uppercase">Rate</label>
-                            <input type="text" id="rate" class="w-full px-3 py-2 border rounded font-mono" value="${existingData?.rate || 1}" oninput="formatRate(this); calculateTotals();">
-                        </div>
-                    </div>
-                </div>
-
-                <div class="space-y-3">
-                    <div>
-                        <label class="block font-semibold mb-1 text-xs text-gray-500 uppercase">Nominal Dasar (IDR)</label>
-                        <input type="text" id="input_nominal_display" class="w-full px-3 py-2 border rounded font-bold text-lg" oninput="formatNominal(this); calculateTotals();">
-                        <input type="hidden" id="input_nominal_raw">
-                    </div>
-                    <div class="grid grid-cols-3 gap-2 items-end">
-                        <div class="col-span-1">
-                            <label class="block font-semibold mb-1 text-xs text-gray-500 uppercase">PPN (%)</label>
-                            <input type="number" id="ppn_percent" class="w-full px-3 py-2 border rounded text-center" value="${existingData?.ppn_percent || ppnPercent || 0}" oninput="calculateTotals()">
-                        </div>
-                        <div class="col-span-2">
-                            <label class="block font-semibold mb-1 text-xs text-gray-500 uppercase">Nominal PPN (IDR)</label>
-                            <input type="text" id="ppn_nominal_display" class="w-full px-3 py-2 bg-gray-50 border rounded" readonly>
-                        </div>
-                    </div>
-                    <div>
-                        <label class="block font-semibold mb-1 text-xs text-gray-500 uppercase">Potongan PPh</label>
-                        <select id="coa_pph" class="w-full px-3 py-2 border rounded mb-2" onchange="calculateTotals()">${pphOptions}</select>
-                        <div class="grid grid-cols-3 gap-2 items-center">
-                            <div class="col-span-1"><input type="text" id="pph_percent_display" class="w-full px-3 py-2 bg-gray-50 border rounded text-center text-xs font-bold" readonly></div>
-                            <div class="col-span-2"><input type="text" id="pph_nominal_display" class="w-full px-3 py-2 bg-gray-50 border rounded text-xs font-bold" readonly></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="grid grid-cols-2 gap-4 mt-6">
-                <div>
-                    <label class="block font-semibold mb-1 text-[10px] text-gray-400 uppercase">Total Tagihan (Inc. Tax)</label>
-                    <input type="text" id="total_inv_tax_display" class="w-full px-3 py-2 bg-gray-50 border rounded font-medium" readonly>
-                </div>
-                <div>
-                    <label class="block font-semibold text-blue-600 mb-1 text-[10px] uppercase text-right">Total Dibayar (Net)</label>
-                    <input type="text" id="total_payment_display" class="w-full px-3 py-2 bg-blue-50 border border-blue-200 text-blue-700 rounded font-bold text-xl text-right" readonly>
-                </div>
-            </div>
-
-            
-            <div class="space-y-3">
-                <div class="mt-4"><label class="block font-semibold mb-1 text-xs text-gray-500 uppercase">Keterangan</label><textarea id="description_input" class="w-full px-3 py-2 border rounded" rows="2" placeholder="Keterangan...">${existingData?.description || description || ''}</textarea></div>
-                <div>
-                    <label class="block font-semibold mb-1 text-xs text-gray-500 uppercase">Bukti Transfer</label>
-                    <input type="file" id="file_upload" class="w-full px-3 py-2 border rounded bg-white w-full">
-                </div>
-            </div>
-        </form>
-    `;
+    // Format Tanggal untuk Input HTML (YYYY-MM-DD)
+    let formattedDate = new Date().toISOString().split('T')[0];
+    if (existingData?.payment_date) {
+        const parts = existingData.payment_date.split('/');
+        if (parts.length === 3) formattedDate = `${parts[2]}-${parts[1]}-${parts[0]}`;
+    }
 
     const result = await Swal.fire({
         title: `<div class="text-center text-xl font-bold">${isEdit ? 'Edit' : 'Input'} Pembayaran</div>`,
-        html: `<div class="text-center mb-4 text-sm text-gray-500 border-b pb-2">Project: <span class="text-blue-600 font-bold">${displayProject}</span></div>${formHtml}`,
-        width: '800px',
+        html: `
+            <div class="text-center mb-4 text-sm text-gray-500 border-b pb-2">Project: <span class="text-blue-600 font-bold">${displayProject}</span></div>
+            <form id="swal-payment-form" class="text-left text-sm text-gray-700">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="space-y-3">
+                        <div>
+                            <label class="block font-semibold mb-1 text-xs text-gray-500 uppercase">Bank Pengirim / Kas</label>
+                            <select id="coa_bank" class="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500">${bankOptions}</select>
+                        </div>
+                        <div>
+                            <label class="block font-semibold mb-1 text-xs text-gray-500 uppercase">No. Pembayaran</label>
+                            <input type="text" id="payment_number" class="w-full px-3 py-2 border rounded bg-gray-50 font-mono" value="${existingData?.payment_number || ''}" ${isEdit ? '' : 'readonly'}>
+                        </div>
+                        <div>
+                            <label class="block font-semibold mb-1 text-xs text-gray-500 uppercase">Tanggal</label>
+                            <input type="date" id="payment_date" class="w-full px-3 py-2 border rounded" value="${formattedDate}">
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="block font-semibold mb-1 text-xs text-gray-500 uppercase">Mata Uang</label>
+                                <select id="currency" class="w-full px-3 py-2 border rounded">${currencyOptions}</select>
+                            </div>
+                            <div>
+                                <label class="block font-semibold mb-1 text-xs text-gray-500 uppercase">Rate</label>
+                                <input type="text" id="rate" class="w-full px-3 py-2 border rounded font-mono" value="${existingData?.rate || 1}" oninput="formatRate(this); calculateTotals();">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="space-y-3">
+                        <div>
+                            <label class="block font-semibold mb-1 text-xs text-gray-500 uppercase">Nominal Dasar (IDR)</label>
+                            <input type="text" id="input_nominal_display" class="w-full px-3 py-2 border rounded font-bold text-lg" oninput="formatNominal(this); calculateTotals();">
+                            <input type="hidden" id="input_nominal_raw">
+                        </div>
+                        <div class="grid grid-cols-3 gap-2 items-end">
+                            <div class="col-span-1">
+                                <label class="block font-semibold mb-1 text-xs text-gray-500 uppercase">PPN (%)</label>
+                                <input type="number" id="ppn_percent" class="w-full px-3 py-2 border rounded text-center" value="${existingData?.ppn_percent || ppnPercent || 0}" oninput="calculateTotals()">
+                            </div>
+                            <div class="col-span-2">
+                                <label class="block font-semibold mb-1 text-xs text-gray-500 uppercase">Nominal PPN (IDR)</label>
+                                <input type="text" id="ppn_nominal_display" class="w-full px-3 py-2 bg-gray-50 border rounded" readonly>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block font-semibold mb-1 text-xs text-gray-500 uppercase">Potongan PPh</label>
+                            <select id="coa_pph" class="w-full px-3 py-2 border rounded mb-2" onchange="calculateTotals()">${pphOptions}</select>
+                            <div class="grid grid-cols-3 gap-2 items-center">
+                                <div class="col-span-1"><input type="text" id="pph_percent_display" class="w-full px-3 py-2 bg-gray-50 border rounded text-center text-xs font-bold" readonly></div>
+                                <div class="col-span-2"><input type="text" id="pph_nominal_display" class="w-full px-3 py-2 bg-gray-50 border rounded text-xs font-bold" readonly></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4 mt-6 border-t pt-4">
+                    <div>
+                        <label class="block font-semibold mb-1 text-[10px] text-gray-400 uppercase font-mono">Total Tagihan (Inc. Tax)</label>
+                        <input type="text" id="total_inv_tax_display" class="w-full px-3 py-2 bg-gray-50 border rounded font-medium" readonly>
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-blue-600 mb-1 text-[10px] uppercase text-right font-mono tracking-tighter">Total Dibayar (Net Paid)</label>
+                        <input type="text" id="total_payment_display" class="w-full px-3 py-2 bg-blue-50 border border-blue-200 text-blue-700 rounded font-bold text-xl text-right" readonly>
+                    </div>
+                </div>
+
+                <div class="mt-4">
+                    <label class="block font-semibold mb-1 text-xs text-gray-500 uppercase">Keterangan</label>
+                    <textarea id="description_input" class="w-full px-3 py-2 border rounded" rows="2" placeholder="Keterangan...">${existingData?.description || description || ''}</textarea>
+                </div>
+                <div class="mt-3">
+                    <label class="block font-semibold mb-1 text-xs text-gray-500 uppercase">Bukti Transfer</label>
+                    <input type="file" id="file_upload" class="w-full px-3 py-2 border rounded bg-white w-full">
+                </div>
+            </form>
+        `,
+        width: '850px',
         showCancelButton: true,
         confirmButtonText: 'Simpan Pembayaran',
         didOpen: () => {
             const finance = (n) => new Intl.NumberFormat("id-ID").format(parseFloat(n) || 0);
-            const unfinance = (s) => parseFloat(s.toString().replace(/[^0-9]/g, '')) || 0;
+            const unfinance = (s) => parseFloat(s.toString().replace(/\./g, '').replace(/,/g, '.')) || 0;
 
             window.calculateTotals = () => {
                 const nominalAsing = unfinance(document.getElementById('input_nominal_display').value);
-                const rate = unfinance(document.getElementById('rate').value) || 1;
-                const totalIDR = nominalAsing * rate;
+                const rateValue = parseFloat(document.getElementById('rate').value) || 1;
+                const totalIDR = nominalAsing * rateValue;
                 
                 const ppnPct = parseFloat(document.getElementById('ppn_percent').value) || 0;
                 const pphSel = document.getElementById('coa_pph');
@@ -451,7 +456,10 @@ async function handlePayment(payableId, projectName, nominal, description, ppnPe
                 const ppnNominal = Math.round((totalIDR * ppnPct) / 100);
                 const pphNominal = Math.round((totalIDR * pphPct) / 100);
                 
-                document.getElementById('pph_percent_display').value = pphPct;
+                // Pastikan elemen ada sebelum set value untuk menghindari error Null
+                const pphPctDisp = document.getElementById('pph_percent_display');
+                if(pphPctDisp) pphPctDisp.value = pphPct;
+
                 document.getElementById('ppn_nominal_display').value = finance(ppnNominal);
                 document.getElementById('pph_nominal_display').value = finance(pphNominal);
                 document.getElementById('total_inv_tax_display').value = finance(totalIDR + ppnNominal);
@@ -464,30 +472,25 @@ async function handlePayment(payableId, projectName, nominal, description, ppnPe
                 document.getElementById('input_nominal_raw').value = val;
             };
 
-            window.updatePaymentNumber = async (date) => {
-                if(isEdit) return;
-                try {
-                    const res = await fetch(`${baseUrl}/generate/payment_number`, { 
-                        method: "POST", headers: { "Authorization": `Bearer ${API_TOKEN}`, "Content-Type": "application/json" }, 
-                        body: JSON.stringify({ payment_date: date }) 
-                    });
-                    const data = await res.json();
-                    if (data?.data?.success) document.getElementById("payment_number").value = data.data.payment_number;
-                } catch(e) {}
-            };
+            // Inisialisasi Nominal Dasar
+            const baseValue = isEdit ? (parseFloat(existingData.nominal) || 0) : (parseFloat(nominal) || 0);
+            const nominalInput = document.getElementById('input_nominal_display');
+            if(nominalInput) {
+                nominalInput.value = finance(baseValue);
+                document.getElementById('input_nominal_raw').value = baseValue;
+            }
 
-            // Inisialisasi awal nominal
-            const baseValue = isEdit ? existingData.nominal : (parseFloat(nominal) || 0);
-            document.getElementById('input_nominal_display').value = finance(baseValue);
-            document.getElementById('input_nominal_raw').value = baseValue;
-
-            if(!isEdit) updatePaymentNumber(document.getElementById('payment_date').value);
+            // Jalankan kalkulasi pertama kali
             calculateTotals();
         },
         preConfirm: async () => {
-            const clean = (id) => document.getElementById(id).value.replace(/[^0-9]/g, '');
+            const unfinance = (id) => {
+                const el = document.getElementById(id);
+                return el ? el.value.replace(/\./g, '').replace(/,/g, '.').replace(/[^0-9.]/g, '') : 0;
+            };
+            
             const pphSel = document.getElementById('coa_pph');
-            const coaPajakId = pphSel.options[pphSel.selectedIndex].dataset.coaId;
+            const coaPajakId = pphSel.options[pphSel.selectedIndex].getAttribute('data-coa-id');
 
             const fd = new FormData();
             fd.append('owner_id', owner_id);
@@ -497,27 +500,25 @@ async function handlePayment(payableId, projectName, nominal, description, ppnPe
             fd.append('payment_number', document.getElementById('payment_number').value);
             fd.append('payment_date', document.getElementById('payment_date').value);
             fd.append('currency', document.getElementById('currency').value);
-            fd.append('rate', clean('rate'));
+            fd.append('rate', unfinance('rate'));
             fd.append('nominal', document.getElementById('input_nominal_raw').value);
+            fd.append('total_inv', document.getElementById('input_nominal_raw').value);
             fd.append('ppn_percent', document.getElementById('ppn_percent').value);
-            fd.append('ppn_nominal', clean('ppn_nominal_display'));
-            fd.append('coa_hutang_pajak', coaPajakId); // Kirim COA ID Pajak
+            fd.append('ppn_nominal', unfinance('ppn_nominal_display'));
+            fd.append('coa_hutang_pajak', coaPajakId); 
             fd.append('pph_percent', document.getElementById('pph_percent_display').value);
-            fd.append('pph_nominal', clean('pph_nominal_display'));
-            fd.append('total_inv_tax', clean('total_inv_tax_display'));
-            fd.append('total_payment', clean('total_payment_display'));
+            fd.append('pph_nominal', unfinance('pph_nominal_display'));
+            fd.append('total_inv_tax', unfinance('total_inv_tax_display'));
+            fd.append('total_payment', unfinance('total_payment_display'));
             fd.append('description', document.getElementById('description_input').value);
 
             const file = document.getElementById('file_upload').files[0];
             if (file) fd.append('file', file);
 
             try {
-                // Sesuai revisi method: PUT untuk Edit, POST untuk Add
                 const url = isEdit ? `${baseUrl}/update/account_payment/${paymentId}` : `${baseUrl}/add/account_payment`;
-                const method = isEdit ? 'PUT' : 'POST';
-
                 const r = await fetch(url, { 
-                    method: method, 
+                    method: isEdit ? 'PUT' : 'POST', 
                     headers: { 'Authorization': `Bearer ${API_TOKEN}` }, 
                     body: fd 
                 });
@@ -532,8 +533,7 @@ async function handlePayment(payableId, projectName, nominal, description, ppnPe
     });
 
     if (result.isConfirmed) {
-        Swal.fire({ icon: 'success', title: 'Berhasil', timer: 1000, showConfirmButton: false });
-        if (isEdit) viewPayment(payableId, projectName); 
+        Swal.fire({ icon: 'success', title: 'Berhasil',  text: isEdit ? 'Data pembayaran berhasil diperbarui' : 'Pembayaran berhasil disimpan', timer: 1500, showConfirmButton: false });
         fetchAndUpdateData(); 
     }
 }
@@ -644,21 +644,34 @@ async function deletePayment(paymentId, payableId, projectName) {
     const confirm = await Swal.fire({
         title: 'Hapus pembayaran ini?',
         text: "Saldo hutang akan dikembalikan seperti semula.",
-        icon: 'warning', showCancelButton: true, confirmButtonColor: '#ef4444'
+        icon: 'warning', 
+        showCancelButton: true, 
+        confirmButtonColor: '#ef4444',
+        confirmButtonText: 'Ya, Hapus!'
     });
 
     if (confirm.isConfirmed) {
+        Swal.fire({ title: 'Menghapus...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
         try {
             const r = await fetch(`${baseUrl}/delete/account_payment/${paymentId}`, {
-                method: 'PUT', // Method diubah menjadi PUT sesuai instruksi
+                method: 'PUT', 
                 headers: { 'Authorization': `Bearer ${API_TOKEN}`, 'Content-Type': 'application/json' }
             });
             
             if (r.ok) {
-                Swal.fire('Terhapus!', 'Pembayaran telah dibatalkan.', 'success');
-                viewPayment(payableId, projectName);
-                fetchAndUpdateData();
-            } else { throw new Error(); }
-        } catch (e) { Swal.fire('Error', 'Gagal memproses penghapusan.', 'error'); }
+                Swal.fire({ icon: 'success', title: 'Terhapus!', text: 'Pembayaran telah dibatalkan.', timer: 1500, showConfirmButton: false });
+                
+                // Langsung fetch data utama
+                if (typeof fetchAndUpdateData === 'function') {
+                    fetchAndUpdateData();
+                }
+            } else { 
+                const err = await r.json();
+                throw new Error(err.message || "Gagal menghapus"); 
+            }
+        } catch (e) { 
+            Swal.fire('Error', e.message || 'Gagal memproses penghapusan.', 'error'); 
+        }
     }
 }
