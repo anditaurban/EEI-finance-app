@@ -539,53 +539,105 @@ async function handlePayment(payableId, projectName, nominal, description, ppnPe
 }
 
 async function viewPayment(payableId, projectName) {
-    Swal.fire({ title: 'Memuat Riwayat...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+    Swal.fire({ 
+        title: 'Memuat Riwayat...', 
+        allowOutsideClick: false, 
+        didOpen: () => Swal.showLoading() 
+    });
 
     try {
-        const res = await fetch(`${baseUrl}/table/account_payment/${payableId}/1`, { //
+        const res = await fetch(`${baseUrl}/table/account_payment/${payableId}/1`, {
             headers: { 'Authorization': `Bearer ${API_TOKEN}` }
         });
         const result = await res.json();
         const payments = result.tableData || [];
-
         const finance = (n) => new Intl.NumberFormat("id-ID").format(parseFloat(n) || 0);
 
-        let tableRows = payments.map((p, index) => `
-            <tr class="border-b text-xs hover:bg-gray-50">
-                <td class="p-3 text-center">${index + 1}</td>
-                <td class="p-3 font-mono text-blue-600">${p.payment_number}</td>
-                <td class="p-3">${p.payment_date}</td>
-                <td class="p-3">${p.bank_name || '-'}</td>
-                <td class="p-3 font-bold text-right">${finance(p.total_payment)}</td>
+        // Perbaikan 1: Escape projectName agar aman digunakan dalam atribut onclick
+        const escapedProjectName = projectName.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+
+        let tableRows = payments.map((item, index) => {
+            // Perbaikan 2: Pastikan variabel 'item' digunakan secara konsisten (menggantikan 'p' yang error)
+            const ppnDetail = item.ppn_percent > 0 
+                ? `<div class="text-[10px] text-emerald-600 font-medium">${item.ppn_name} (${item.ppn_percent}%)<br>+${finance(item.ppn_nominal)}</div>` 
+                : '<span class="text-gray-300">-</span>';
+                
+            const pphDetail = item.pph_percent > 0 
+                ? `<div class="text-[10px] text-red-600 font-medium">${item.pph_name} (${item.pph_percent}%)<br>-${finance(item.pph_nominal)}</div>` 
+                : '<span class="text-gray-300">-</span>';
+
+            const safeDesc = (item.description || "").replace(/'/g, "\\'").replace(/"/g, '&quot;');
+
+            return `
+            <tr class="border-b text-[11px] hover:bg-gray-50 transition-colors">
+                <td class="p-3 text-center text-gray-500">${index + 1}</td>
+                <td class="p-3">
+                    <div class="font-mono font-bold text-blue-600">${item.payment_number}</div>
+                    <div class="text-[10px] text-gray-400">${item.payment_date}</div>
+                </td>
+                <td class="p-3">
+                    <div class="font-semibold text-gray-700">${item.vendor_name || '-'}</div>
+                    <div class="text-[10px] text-gray-500 truncate max-w-[150px]">${item.description || '-'}</div>
+                </td>
+                <td class="p-3 font-semibold text-right text-gray-700">${finance(item.total_inv_tax)}</td>
+                <td class="p-3 text-center">${ppnDetail}</td>
+                <td class="p-3 text-center">${pphDetail}</td>
+                <td class="p-3">
+                    <div class="text-[10px] font-medium text-gray-600">${item.bank_name || '-'}</div>
+                </td>
+                <td class="p-3 font-bold text-right text-emerald-700 bg-emerald-50/30">${finance(item.total_payment)}</td>
                 <td class="p-3 text-center">
-                    <div class="flex gap-3 justify-center">
-                        <button onclick="handlePayment('${payableId}', '${projectName.replace(/'/g, "\\'")}', '${p.nominal}', '${(p.description || "").replace(/'/g, "\\'")}', ${p.ppn_percent}, '${p.payment_id}')" class="text-blue-500 hover:text-blue-700 font-medium font-bold">Edit</button>
-                        <button onclick="deletePayment('${p.payment_id}', '${payableId}', '${projectName.replace(/'/g, "\\'")}')" class="text-red-500 hover:text-red-700 font-medium font-bold">Hapus</button>
+                    <div class="flex gap-2 justify-center">
+                        <button type="button" onclick="handlePayment('${payableId}', '${escapedProjectName}', '${item.nominal}', '${safeDesc}', ${item.ppn_percent}, '${item.payment_id}')" class="px-2 py-1 text-blue-600 hover:bg-blue-100 rounded border border-blue-200 transition">
+                             Edit
+                        </button>
+                        <button type="button" onclick="deletePayment('${item.payment_id}', '${payableId}', '${escapedProjectName}')" class="px-2 py-1 text-red-600 hover:bg-red-100 rounded border border-red-200 transition">
+                             Hapus
+                        </button>
                     </div>
                 </td>
-            </tr>`).join('');
+            </tr>`;
+        }).join('');
 
         Swal.fire({
-            title: `<span class="text-lg font-bold">Riwayat Pembayaran</span>`,
+            title: `<div class="text-left"><span class="text-lg font-bold">Riwayat Pembayaran</span></div>`,
             html: `
-                <div class="text-left mb-4 p-3 bg-blue-50 rounded-lg border border-blue-100">
-                    <p class="text-[10px] uppercase font-bold text-blue-400">Project / Description</p>
-                    <p class="text-sm font-semibold text-gray-700">${projectName}</p>
+                <div class="text-left mb-4 p-3 bg-blue-50 rounded-lg border border-blue-100 flex justify-between items-center">
+                    <div>
+                        <p class="text-[10px] uppercase font-bold text-blue-400 tracking-wider">Project / Description</p>
+                        <p class="text-sm font-semibold text-gray-700">${projectName}</p>
+                    </div>
+                    <button type="button" onclick="handlePayment('${payableId}', '${escapedProjectName}', '0', '', 0)" class="bg-emerald-600 text-white px-4 py-2 rounded-md text-xs font-bold hover:bg-emerald-700 shadow-md">
+                        + Tambah Cicilan
+                    </button>
                 </div>
-                <div class="overflow-x-auto border rounded-lg">
+                <div class="overflow-x-auto border border-gray-200 rounded-xl shadow-sm">
                     <table class="w-full text-left border-collapse">
-                        <thead class="bg-gray-100 text-[10px] uppercase text-gray-600">
-                            <tr><th class="p-3 text-center">No</th><th class="p-3">Ref No</th><th class="p-3">Tanggal</th><th class="p-3">Bank</th><th class="p-3 text-right">Total</th><th class="p-3 text-center">Aksi</th></tr>
+                        <thead class="bg-gray-50 text-[10px] uppercase text-gray-500 font-bold border-b">
+                            <tr>
+                                <th class="p-3 text-center">No</th>
+                                <th class="p-3">Ref & Tanggal</th>
+                                <th class="p-3">Vendor & Deskripsi</th>
+                                <th class="p-3 text-right">Total Inv</th>
+                                <th class="p-3 text-center">PPN</th>
+                                <th class="p-3 text-center">PPh</th>
+                                <th class="p-3">Bank</th>
+                                <th class="p-3 text-right">Total Pay</th>
+                                <th class="p-3 text-center">Aksi</th>
+                            </tr>
                         </thead>
-                        <tbody>${tableRows || '<tr><td colspan="6" class="p-8 text-center text-gray-400 italic">Belum ada riwayat pembayaran</td></tr>'}</tbody>
+                        <tbody class="divide-y divide-gray-100">${tableRows || '<tr><td colspan="9" class="p-12 text-center text-gray-400 italic">Belum ada riwayat pembayaran</td></tr>'}</tbody>
                     </table>
-                </div>
-                <div class="mt-4 flex justify-end">
-                    <button onclick="handlePayment('${payableId}', '${projectName.replace(/'/g, "\\'")}', '0', '', 0)" class="bg-emerald-600 text-white px-4 py-2 rounded text-xs font-bold hover:bg-emerald-700 shadow-sm transition">+ Tambah Cicilan</button>
                 </div>`,
-            width: '850px', showConfirmButton: false, showCloseButton: true
+            width: '1250px',
+            showConfirmButton: false,
+            showCloseButton: true,
+            customClass: { popup: 'rounded-2xl' }
         });
-    } catch (e) { Swal.fire('Error', 'Gagal memuat data riwayat.', 'error'); }
+    } catch (e) { 
+        console.error(e);
+        Swal.fire('Error', 'Gagal memuat data riwayat.', 'error'); 
+    }
 }
 
 async function deletePayment(paymentId, payableId, projectName) {
