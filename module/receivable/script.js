@@ -352,7 +352,7 @@ async function handlePayment(receivableId, projectName, nominal) {
                         <select id="coa_bank" class="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500">${bankOptions}</select>
                     </div>
                     <div>
-                        <label class="block font-semibold mb-1 text-xs text-gray-500 uppercase">No. Kwitansi</label>
+                        <label class="block font-semibold mb-1 text-xs text-gray-500 uppercase">No. Pembayaran</label>
                         <input type="text" id="receipt_number" class="w-full px-3 py-2 border rounded bg-gray-50 font-mono" readonly>
                     </div>
                     <div>
@@ -494,8 +494,21 @@ async function handlePayment(receivableId, projectName, nominal) {
                         body: JSON.stringify({ receipt_date: date }) 
                     });
                     const data = await res.json();
-                    if (data?.data?.success) document.getElementById("receipt_number").value = data.data.receipt_number;
-                } catch(e) {}
+                    
+                    console.log("Response API Kwitansi:", data); // Lihat di console F12
+
+                    // Cek apakah strukturnya benar data.data.receipt_number
+                    if (data && data.data && data.data.receipt_number) {
+                        document.getElementById("receipt_number").value = data.data.receipt_number;
+                    } else if (data.receipt_number) {
+                        // Jika ternyata strukturnya langsung data.receipt_number
+                        document.getElementById("receipt_number").value = data.receipt_number;
+                    } else {
+                        console.error("Struktur data kwitansi tidak sesuai!");
+                    }
+                } catch(e) {
+                    console.error("Gagal fetch nomor kwitansi:", e);
+                }
             };
 
             // Set format awal nominal saat modal dibuka

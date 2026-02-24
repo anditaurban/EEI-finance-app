@@ -84,24 +84,30 @@ async function loadHppList(type = 'coa_bua') {
 // --- inisialisasi halaman ---
 var isEditMode = !!(window.detail_id && window.detail_id !== "null" && window.detail_id !== "undefined");
 
-(function initializeFormMode() {
+(async function initializeFormMode() {
   const addButton = document.getElementById("addButton");
   const updateButton = document.getElementById("updateButton");
   const projectInput = document.getElementById("projectInput");
   
+  await loadPphList();
+
   if (isEditMode) {
     addButton.classList.add("hidden");
     updateButton.classList.remove("hidden");
     projectInput.readOnly = true;
     projectInput.classList.add("bg-gray-100");
-    loadDetail(window.detail_id, window.detail_desc);
+    
+    await loadDetail(window.detail_id, window.detail_desc);
+    // Tambahkan ini agar setelah detail dimuat, input vendor (jika manual) bisa search
+    setupVendorSearch(); 
   } else {
+    await loadHppList('coa_bua'); 
     addButton.classList.remove("hidden");
     updateButton.classList.add("hidden");
     projectInput.readOnly = false;
     projectInput.classList.remove("bg-gray-100");
     setupProjectSearch();
-    setupVendorSearch(); // Inisialisasi pencarian vendor (Revisi Poin 3)
+    setupVendorSearch(); // Mode Add sudah benar
     document.getElementById("formTitle").innerText = "PAYABLE FORM";
   }
 })();
@@ -512,26 +518,27 @@ function getDataPayload() {
     return el ? el.value.trim() : "";
   };
 
+  const vendorEl = document.getElementById("vendor");
   const ppnEnabled = document.getElementById("ppn_enabled")?.checked;
+  const pphEnabled = document.getElementById("pph_enabled")?.checked;
   
-  // Ambil nilai mentah
-  const rawProjectId = getVal("project_id");
-  const rawProjectNumber = getVal("project_number");
-  const projectName = getVal("projectInput"); // FIXED: Definisi variabel agar tidak error
+  // Ambil COA ID Pajak dari dataset select PPh
+  const pphSelect = document.getElementById('pph_percent');
+  const selectedPphCoaId = (pphEnabled && pphSelect) ? 
+                           pphSelect.options[pphSelect.selectedIndex]?.dataset?.coaId : 0;
 
   const payload = {
-    owner_id,
-    user_id,
-    // Tetap kirim 0 jika non-project sesuai instruksi revisi
-    project_id: (rawProjectId === "" || rawProjectId === "0") ? 0 : rawProjectId,
-    project_name: projectName || "Non-Project",
-    project_number: (rawProjectNumber === "" || rawProjectNumber === "0") ? 0 : rawProjectNumber,
+    owner_id: owner_id,
+    user_id: user_id,
+    // Pastikan project_id dikirim sebagai integer
+    project_id: (getVal("project_id") === "" || getVal("project_id") === "0") ? 0 : parseInt(getVal("project_id")),
+    project_name: getVal("projectInput") || "Non-Project",
+    project_number: getVal("project_number") || "0",
     
+    // Ambil vendor name dari value, dan ID dari dataset
     vendor: getVal("vendor"),
-    vendor_id: (() => {
-      const vendorEl = document.getElementById("vendor");
-      return vendorEl?.dataset?.vendorId || "";
-    })(),
+    vendor_id: vendorEl?.dataset?.vendorId || "0",
+    
     po_number: getVal("vendor_po_number"),
     inv_number: getVal("invoice_number"),
     inv_date: getVal("invoice_date"),
@@ -544,11 +551,11 @@ function getDataPayload() {
     total_inv: unfinance(getVal("total_invoice")),
     ppn_percent: ppnEnabled ? getVal("ppn_percent") : "0",
     ppn_nominal: ppnEnabled ? unfinance(getVal("ppn_nominal")) : 0,
-    pph_percent: "0",
-    pph_nominal: 0,
+    pph_percent: pphEnabled ? pphSelect.value : "0",
+    pph_nominal: pphEnabled ? unfinance(getVal("pph_nominal")) : 0,
     total_inv_tax: unfinance(getVal("total_after_tax")),
-    coa_hpp: getVal("pph_list"),
-    coa_hutang_pajak: 0,
+    coa_hpp: getVal("pph_list"), 
+    coa_hutang_pajak: selectedPphCoaId || 0,
     description: getVal("description") || window.detail_desc || "",
   };
 
@@ -630,6 +637,7 @@ function setupVendorSearch() {
 async function submitData(method, id = "") {
   const payload = getDataPayload();
   if (!payload) return;
+  
   const isCreate = method === "POST";
   const url = `${baseUrl}/${isCreate ? "add" : "update"}/account_payable${id ? "/" + id : ""}`;
 
@@ -649,8 +657,9 @@ async function submitData(method, id = "") {
     });
     
     const responseText = await response.text();
-    console.log("Response Status:", response.status);
     console.log("Response Body:", responseText);
+    console.log("Response Status:", response.status);
+    
     
     let result;
     try {
@@ -738,157 +747,130 @@ async function autoSetRate(input) {
 
 /**
  * load detail (untuk mode edit)
+ * Dioptimalkan untuk sinkronisasi data dropdown HPP dan Vendor
  */
 async function loadDetail(Id, Detail) {
-  document.getElementById("formTitle").innerText = "EDIT PAYABLE";
-  window.detail_id = Id;
-  window.detail_desc = Detail;
+    document.getElementById("formTitle").innerText = "EDIT PAYABLE";
+    window.detail_id = Id;
+    window.detail_desc = Detail;
 
-  try {
-    const res = await fetch(
-      `${baseUrl}/detail/${currentDataType}/${Id}?_=${Date.now()}`,
-      { headers: { Authorization: `Bearer ${API_TOKEN}` } }
-    );
-    const result = await res.json();
-    let detail = result?.detail || result?.data?.detail || result?.data || result;
-    // handle API returning array of detail
-    if (Array.isArray(detail)) {
-      detail = detail[0] || {};
-    }
+    Swal.fire({
+        title: 'Memuat Data...',
+        allowOutsideClick: false,
+        didOpen: () => { Swal.showLoading(); }
+    });
 
-    console.log("Detail data:", detail);
+    try {
+        const res = await fetch(
+            `${baseUrl}/detail/${currentDataType}/${Id}?_=${Date.now()}`,
+            { headers: { Authorization: `Bearer ${API_TOKEN}` } }
+        );
+        const result = await res.json();
+        let detail = result?.detail || result?.data?.detail || result?.data || result;
 
-    // mapping info project
-    document.getElementById("projectInput").value = detail.project_name || detail.nama_project || "";
-    document.getElementById("project_id").value = detail.project_id || detail.id_project || "";
-    document.getElementById("project_number").value = detail.project_number || "";
-    document.getElementById("po_number").value = detail.po_number || "";
-    
-    // load vendors and set current vendor
-    if (detail.project_id) {
-      await loadVendorsForProject(detail.project_id);
-    }
-    
-    // set vendor value after field is created, prefer vendor_id for matching
-    const vendorField = document.getElementById("vendor");
-    if (vendorField) {
-      if (vendorField.tagName === 'SELECT') {
-        const vendorId = (detail.vendor_id || detail.vendorid || detail.id_vendor || "").toString();
-        let matched = false;
-        if (vendorId) {
-          const opt = Array.from(vendorField.options).find(o => (o.dataset.vendorId || "").toString() === vendorId);
-          if (opt) {
-            vendorField.value = opt.value;
-            vendorField.dataset.vendorId = opt.dataset.vendorId || "";
-            vendorField.dataset.contractAmount = opt.dataset.contractAmount || 0;
-            document.getElementById("project_amount").value = finance(unfinance(opt.dataset.contractAmount || 0));
-            matched = true;
-          }
+        if (Array.isArray(detail)) detail = detail[0] || {};
+
+        // 1. Mapping Project Info
+        const projectId = detail.project_id || detail.id_project || "0";
+        document.getElementById("project_id").value = projectId;
+        document.getElementById("projectInput").value = detail.project_name || detail.nama_project || "";
+        document.getElementById("project_number").value = detail.project_number || "";
+
+        // 2. Load HPP/BUA List
+        const hppType = (projectId !== "0") ? 'coa_hpp' : 'coa_bua';
+        await loadHppList(hppType);
+        const hppSelect = document.getElementById("pph_list");
+        if (hppSelect && detail.coa_hpp) hppSelect.value = detail.coa_hpp;
+
+        // 3. Setup Vendor
+        if (projectId !== "0") {
+            await loadVendorsForProject(projectId);
         }
-        if (!matched) {
-          vendorField.value = detail.vendor || detail.supplier || "";
-          const opt = vendorField.options[vendorField.selectedIndex];
-          vendorField.dataset.vendorId = opt?.dataset?.vendorId || "";
-          vendorField.dataset.contractAmount = opt?.dataset?.contractAmount || 0;
-          document.getElementById("project_amount").value = finance(unfinance(opt?.dataset?.contractAmount || detail.contract_amount || 0));
+
+        const vendorField = document.getElementById("vendor");
+        if (vendorField) {
+            vendorField.value = detail.vendor || detail.supplier || "";
+            vendorField.dataset.vendorId = detail.vendor_id || detail.vendorid || "0";
+
+            if (vendorField.tagName === 'SELECT') {
+                const targetId = (detail.vendor_id || "0").toString();
+                const opt = Array.from(vendorField.options).find(o => o.dataset.vendorId == targetId);
+                if (opt) {
+                    vendorField.value = opt.value;
+                    vendorField.dataset.contractAmount = opt.dataset.contractAmount;
+                    document.getElementById("project_amount").value = finance(opt.dataset.contractAmount);
+                }
+            }
         }
-      } else {
-        vendorField.value = detail.vendor || detail.supplier || "";
-        const amt = unfinance(vendorField.dataset.contractAmount || detail.contract_amount || 0);
-        document.getElementById("project_amount").value = finance(amt);
-      }
+
+        // 4. Mapping General & Financial Info
+        document.getElementById("description").value = detail.detail_inv || detail.description || "";
+        document.getElementById("invoice_date").value = detail.inv_date || "";
+        document.getElementById("due_date").value = detail.due_date || "";
+        document.getElementById("invoice_number").value = detail.inv_number || "";
+        document.getElementById("vendor_po_number").value = detail.po_number || "";
+
+        const currency = detail.currency || "IDR";
+        const displayNominal = (parseFloat(detail.nominal) > 0) ? detail.nominal : detail.total_inv;
+        document.getElementById("nominal").value = finance(displayNominal || 0);
+
+        document.getElementById("rate").value = finance(detail.rate || 1);
+        document.getElementById("total_invoice").value = finance(detail.total_inv || 0);
+
+        // 5. Mapping Pajak
+        const ppnPercent = parseFloat(detail.ppn_percent) || 0;
+        const ppnNominal = parseFloat(detail.ppn_nominal) || 0;
+        const pphNominal = parseFloat(detail.pph_nominal) || 0;
+
+        // PPN UI
+        const ppnCheckbox = document.getElementById("ppn_enabled");
+        const ppnPercentInput = document.getElementById("ppn_percent");
+        if (ppnPercent > 0 || ppnNominal > 0) {
+            ppnCheckbox.checked = true;
+            ppnPercentInput.disabled = false;
+            ppnPercentInput.classList.remove("bg-gray-100");
+        }
+        ppnPercentInput.value = ppnPercent || 11;
+        document.getElementById("ppn_nominal").value = finance(ppnNominal);
+
+        // PPh UI
+        const pphCheckbox = document.getElementById("pph_enabled");
+        const pphPercentSelect = document.getElementById("pph_percent");
+
+        if (detail.coa_hutang_pajak && detail.coa_hutang_pajak !== "0") {
+            pphCheckbox.checked = true;
+            pphPercentSelect.disabled = false;
+            pphPercentSelect.classList.remove("bg-gray-100");
+
+            const pphOpt = Array.from(pphPercentSelect.options).find(o => o.dataset.coaId == detail.coa_hutang_pajak);
+            if (pphOpt) pphPercentSelect.value = pphOpt.value;
+        }
+        document.getElementById("pph_nominal").value = finance(pphNominal);
+        document.getElementById("total_after_tax").value = finance(detail.total_inv_tax);
+
+        // 6. FINALISASI UI
+        if (currency !== "IDR") {
+            const rateInput = document.getElementById("rate");
+            rateInput.removeAttribute("readonly");
+            rateInput.classList.remove("bg-gray-100");
+        }
+
+        // Update persentase progress
+        const projectAmount = unfinance(document.getElementById("project_amount").value);
+        const totalInv = parseFloat(detail.total_inv) || 0; // Menggunakan data dari API
+
+        if (projectAmount > 0) {
+            const percentVal = (totalInv / projectAmount) * 100;
+            const formattedPercent = percentVal.toFixed(2).replace(/\.00$/, "");
+            document.getElementById("percent_converted").value = formattedPercent;
+            document.getElementById("percent_invoice").value = formattedPercent;
+        }
+
+        Swal.close();
+    } catch (err) {
+        console.error("Gagal load detail:", err);
+        Swal.fire("Error", "Gagal mengambil data detail: " + err.message, "error");
     }
-
-    // fallback if vendor not set
-    if (!document.getElementById("project_amount").value) {
-      document.getElementById("project_amount").value = finance(detail.contract_amount || 0);
-    }
-
-    document.getElementById("description").value = detail.detail_inv || detail.description || "";
-
-    // mapping tanggal & no inv
-    document.getElementById("invoice_date").value = detail.inv_date || "";
-    document.getElementById("due_date").value = detail.due_date || "";
-    document.getElementById("payment_date").value = detail.payment_date || "";
-    document.getElementById("invoice_number").value = detail.inv_number || "";
-
-    // mapping keuangan
-    let curr = detail.currency || "IDR";
-    document.getElementById("currency").value = curr;
-
-    let dbRate = parseFloat(detail.rate) || 0;
-    if (curr === "IDR" && dbRate === 0) dbRate = 1;
-    document.getElementById("rate").value = finance(dbRate);
-
-    let dbTotalInv = parseFloat(detail.total_inv) || 0;
-    let dbNominal = parseFloat(detail.nominal) || 0;
-
-    if (dbNominal === 0 && dbTotalInv > 0) {
-      if (curr === "IDR") {
-        dbNominal = dbTotalInv;
-      } else {
-        dbNominal = dbTotalInv / dbRate;
-      }
-    }
-
-    document.getElementById("nominal").value = finance(dbNominal);
-    document.getElementById("total_converted").value = finance(dbTotalInv);
-    document.getElementById("total_invoice").value = finance(dbTotalInv);
-
-    // pajak - set checkbox state
-    const ppnPercent = parseFloat(detail.ppn_percent) || 0;
-    const pphPercent = parseFloat(detail.pph_percent) || 0;
-    const ppnNominal = parseFloat(detail.ppn_nominal) || 0;
-    const pphNominal = parseFloat(detail.pph_nominal) || 0;
-    
-    const ppnCheckbox = document.getElementById("ppn_enabled");
-    const pphCheckbox = document.getElementById("pph_enabled");
-    const ppnPercentInput = document.getElementById("ppn_percent");
-    const pphPercentInput = document.getElementById("pph_percent");
-    
-    if (ppnPercent > 0 || ppnNominal > 0) {
-      ppnCheckbox.checked = true;
-      ppnPercentInput.disabled = false;
-      ppnPercentInput.classList.remove("bg-gray-100");
-    } else {
-      ppnCheckbox.checked = false;
-      ppnPercentInput.disabled = true;
-      ppnPercentInput.classList.add("bg-gray-100");
-    }
-    ppnPercentInput.value = ppnPercent || 11;
-    document.getElementById("ppn_nominal").value = finance(ppnNominal);
-    
-    if (pphPercent > 0 || pphNominal > 0) {
-      pphCheckbox.checked = true;
-      pphPercentInput.disabled = false;
-      pphPercentInput.classList.remove("bg-gray-100");
-    } else {
-      pphCheckbox.checked = false;
-      pphPercentInput.disabled = true;
-      pphPercentInput.classList.add("bg-gray-100");
-    }
-    pphPercentInput.value = pphPercent || 2;
-    document.getElementById("pph_nominal").value = finance(pphNominal);
-    
-    document.getElementById("total_after_tax").value = finance(detail.total_inv_tax);
-
-    // finalisasi ui
-    if (curr !== "IDR") {
-      const rateInput = document.getElementById("rate");
-      rateInput.removeAttribute("readonly");
-      rateInput.classList.remove("bg-gray-100");
-    }
-    
-    const projectAmount = unfinance(document.getElementById("project_amount").value);
-    if (projectAmount > 0) {
-      const percentConverted = (dbTotalInv / projectAmount) * 100;
-      document.getElementById("percent_converted").value = percentConverted.toFixed(2).replace(/\.00$/, "");
-      document.getElementById("percent_invoice").value = percentConverted.toFixed(2).replace(/\.00$/, "");
-    }
-  } catch (err) {
-    console.error("Gagal load detail:", err);
-    Swal.fire("Error", "Gagal mengambil data detail.", "error");
-  }
 }
 
 function getSelectedPphCoaId() {

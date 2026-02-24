@@ -357,22 +357,21 @@ async function generateInvoiceNumber() {
   }
 }
 
-// get data payload untuk submit
 function getDataPayload() {
   const getVal = (id) => {
     const el = document.getElementById(id);
     return el ? el.value.trim() : "";
   };
 
-  // cek status checkbox pajak
   const ppnEnabled = document.getElementById("ppn_enabled")?.checked;
   const pphEnabled = document.getElementById("pph_enabled")?.checked;
 
   const payload = {
     owner_id,
     user_id,
-    project_id: getVal("project_id"),
-    pelanggan_id: getVal("pelanggan_id"),
+    // Gunakan fallback 0 atau string kosong agar backend tidak error
+    project_id: getVal("project_id") || 0, 
+    pelanggan_id: getVal("pelanggan_id") || 0,
     project_number: getVal("project_number"),
     client: getVal("client"),
     po_number: getVal("po_number"),
@@ -387,7 +386,6 @@ function getDataPayload() {
     total_converted: unfinance(getVal("total_converted")),
     total_inv: unfinance(getVal("total_invoice")),
 
-    // kirim 0 jika checkbox tidak dicentang
     ppn_percent: ppnEnabled ? getVal("ppn_percent") : "0",
     ppn_nominal: ppnEnabled ? unfinance(getVal("ppn_nominal")) : 0,
     pph_percent: pphEnabled ? getVal("pph_percent") : "0",
@@ -396,13 +394,12 @@ function getDataPayload() {
     total_inv_tax: unfinance(getVal("total_after_tax")),
 
     description: getVal("description"),
-    detail_inv: window.detail_desc || "",
+    // Pastikan termin/detail_inv terambil
+    detail_inv: getVal("detail_inv") || window.detail_desc || "",
+    hpp_type: getVal("hpp_type") // Pastikan field ini ada di HTML
   };
 
-  if (!payload.project_id) {
-    Swal.fire("Warning", "Project belum dipilih!", "warning");
-    return null;
-  }
+  // Validasi minimal: Hanya tanggal invoice yang wajib
   if (!payload.inv_date) {
     Swal.fire("Warning", "Tanggal Invoice wajib diisi!", "warning");
     return null;
@@ -604,9 +601,6 @@ async function refreshCurrencyRates() {
   }
 }
 
-/**
- * load detail (untuk mode edit)
- */
 async function loadDetail(Id, Detail) {
   document.getElementById("formTitle").innerText = "EDIT RECEIVABLE";
   window.detail_id = Id;
@@ -615,113 +609,81 @@ async function loadDetail(Id, Detail) {
   try {
     const res = await fetch(
       `${baseUrl}/detail/${currentDataType}/${Id}?_=${Date.now()}`,
-      {
-        headers: { Authorization: `Bearer ${API_TOKEN}` },
-      }
+      { headers: { Authorization: `Bearer ${API_TOKEN}` } }
     );
     const result = await res.json();
     const detail = result.detail || result;
 
-    console.log("Detail data:", detail);
-
-    // mapping info project
+    // --- 1. Mapping Info Project & Client ---
     document.getElementById("projectInput").value = detail.project_name || "";
     document.getElementById("project_id").value = detail.project_id || "";
     document.getElementById("pelanggan_id").value = detail.pelanggan_id || "";
     document.getElementById("project_number").value = detail.project_number || detail.nomor_project || "";
     document.getElementById("po_number").value = detail.po_number || "";
-    document.getElementById("client").value = detail.client || detail.pelanggan_nama || detail.customer_name || "";
-
-    let amount = detail.contract_amount || detail.project_amount || 0;
-    document.getElementById("project_amount").value = finance(amount);
+    document.getElementById("client").value = detail.client || detail.pelanggan_nama || "";
+    
+    // --- 2. Mapping Termin & HPP (Pastikan ID di HTML Sesuai) ---
+    // Mapping Termin ke field detail_inv atau description
+    if (document.getElementById("detail_inv")) {
+      document.getElementById("detail_inv").value = detail.detail_inv || detail.detail_desc || "";
+    }
+    // Mapping Jenis HPP jika ada fieldnya
+    if (document.getElementById("hpp_type")) {
+       document.getElementById("hpp_type").value = detail.hpp_type || "";
+    }
     document.getElementById("description").value = detail.description || "";
 
-    // mapping tanggal & no inv
+    // --- 3. Mapping Keuangan ---
     document.getElementById("invoice_date").value = detail.inv_date || "";
     document.getElementById("due_date").value = detail.due_date || "";
     document.getElementById("payment_date").value = detail.payment_date || "";
     document.getElementById("invoice_number").value = detail.inv_number || "";
 
-    // mapping keuangan
     let curr = detail.currency || "IDR";
     document.getElementById("currency").value = curr;
-
-    let dbRate = parseFloat(detail.rate) || 0;
-    if (curr === "IDR" && dbRate === 0) {
-      dbRate = 1;
-    }
+    
+    let dbRate = parseFloat(detail.rate) || (curr === "IDR" ? 1 : 0);
     document.getElementById("rate").value = finance(dbRate);
 
     let dbTotalInv = parseFloat(detail.total_inv) || 0;
     let dbNominal = parseFloat(detail.nominal) || 0;
-
-    // recovery nominal jika di db 0
-    if (dbNominal === 0 && dbTotalInv > 0) {
-      if (curr === "IDR") {
-        dbNominal = dbTotalInv;
-      } else {
-        dbNominal = dbTotalInv / dbRate;
-      }
-    }
-
+    
     document.getElementById("nominal").value = finance(dbNominal);
-    document.getElementById("total_converted").value = finance(dbTotalInv);
     document.getElementById("total_invoice").value = finance(dbTotalInv);
+    document.getElementById("total_converted").value = finance(dbTotalInv);
 
-    // pajak - set checkbox state berdasarkan nilai
+    // --- 4. Mapping Pajak & COA (DENGAN SYNC) ---
     const ppnPercent = parseFloat(detail.ppn_percent) || 0;
     const pphPercent = parseFloat(detail.pph_percent) || 0;
-    const ppnNominal = parseFloat(detail.ppn_nominal) || 0;
-    const pphNominal = parseFloat(detail.pph_nominal) || 0;
     
-    // reset checkbox dulu
+    // Setup PPN
     const ppnCheckbox = document.getElementById("ppn_enabled");
+    ppnCheckbox.checked = ppnPercent > 0;
+    toggleTaxField('ppn'); // Jalankan UI toggle
+    document.getElementById("ppn_percent").value = ppnPercent || 11;
+    document.getElementById("ppn_nominal").value = finance(detail.ppn_nominal);
+
+    // Setup PPh (Menunggu List Load Selesai)
     const pphCheckbox = document.getElementById("pph_enabled");
-    const ppnPercentInput = document.getElementById("ppn_percent");
-    const pphPercentInput = document.getElementById("pph_percent");
-    
-    // set checkbox ppn jika ada nilai
-    if (ppnPercent > 0 || ppnNominal > 0) {
-      ppnCheckbox.checked = true;
-      ppnPercentInput.disabled = false;
-      ppnPercentInput.classList.remove("bg-gray-100");
-    } else {
-      ppnCheckbox.checked = false;
-      ppnPercentInput.disabled = true;
-      ppnPercentInput.classList.add("bg-gray-100");
+    pphCheckbox.checked = pphPercent > 0;
+    toggleTaxField('pph');
+
+    // Memastikan list PPh sudah ter-load sebelum set value
+    await loadPphList(); 
+    if (pphPercent > 0) {
+        document.getElementById("pph_percent").value = pphPercent;
     }
-    ppnPercentInput.value = ppnPercent || 11;
-    document.getElementById("ppn_nominal").value = finance(ppnNominal);
-    
-    // set checkbox pph jika ada nilai
-    if (pphPercent > 0 || pphNominal > 0) {
-      pphCheckbox.checked = true;
-      pphPercentInput.disabled = false;
-      pphPercentInput.classList.remove("bg-gray-100");
-    } else {
-      pphCheckbox.checked = false;
-      pphPercentInput.disabled = true;
-      pphPercentInput.classList.add("bg-gray-100");
-    }
-    pphPercentInput.value = pphPercent || 2;
-    document.getElementById("pph_nominal").value = finance(pphNominal);
+    document.getElementById("pph_nominal").value = finance(detail.pph_nominal);
     
     document.getElementById("total_after_tax").value = finance(detail.total_inv_tax);
 
-    // finalisasi ui - jangan panggil autoSetRate karena akan override rate dari db
+    // Unlock rate jika bukan IDR
     if (curr !== "IDR") {
       const rateInput = document.getElementById("rate");
       rateInput.removeAttribute("readonly");
       rateInput.classList.remove("bg-gray-100");
     }
-    
-    // hitung ulang persentase saja tanpa mengubah nilai
-    const projectAmount = unfinance(document.getElementById("project_amount").value);
-    if (projectAmount > 0) {
-      const percentConverted = (dbTotalInv / projectAmount) * 100;
-      document.getElementById("percent_converted").value = percentConverted.toFixed(2).replace(/\.00$/, "");
-      document.getElementById("percent_invoice").value = percentConverted.toFixed(2).replace(/\.00$/, "");
-    }
+
   } catch (err) {
     console.error("Gagal load detail:", err);
     Swal.fire("Error", "Gagal mengambil data detail.", "error");

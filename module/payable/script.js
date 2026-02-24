@@ -150,10 +150,23 @@ window.rowTemplate = function (item, index, perPage = 10) {
       
       <td class="px-6 py-4 align-top text-center w-24">
         <div class="flex flex-col items-center gap-2">
-          <button onclick="event.stopPropagation(); loadModuleContent('payable_form', '${item.payable_id}', '${safeProjectName}');" 
-            class="group/btn text-gray-400 hover:text-blue-600 p-1.5 rounded-lg hover:bg-blue-50 transition" title="Edit">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
-          </button>
+          <button onclick="event.stopPropagation(); 
+    ${isPaid ? 
+        `Swal.fire({
+            icon: 'warning',
+            title: 'Akses Ditolak',
+            text: 'Data ini sudah terbayar dan tidak dapat diedit.',
+            confirmButtonColor: '#3085d6'
+        })` : 
+        `loadModuleContent('payable_form', '${item.payable_id}', '${safeProjectName}')`
+    };" 
+    class="group/btn text-gray-400 hover:text-blue-600 p-1.5 rounded-lg hover:bg-blue-50 transition" 
+    title="Edit">
+    
+    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+    </svg>
+</button>
           
           <button onclick="event.stopPropagation(); ${isPaid ? `viewPayment('${item.payable_id}', '${safeProjectName}')` : `handlePayment('${item.payable_id}', '${safeProjectName}', '${item.total_inv}', '${safeDesc}', ${item.ppn_percent || 0})`}" 
             class="group/btn text-gray-400 hover:text-blue-600 p-1.5 rounded-lg hover:bg-blue-50 transition" 
@@ -375,7 +388,7 @@ async function handlePayment(payableId, projectName, nominal, description, ppnPe
                         </div>
                         <div>
                             <label class="block font-semibold mb-1 text-xs text-gray-500 uppercase">Tanggal</label>
-                            <input type="date" id="payment_date" class="w-full px-3 py-2 border rounded" value="${formattedDate}">
+                            <input type="date" id="payment_date" class="w-full px-3 py-2 border rounded" value="${new Date().toISOString().split('T')[0]}" onchange="updatePaymentNumber(this.value)">
                         </div>
                         <div class="grid grid-cols-2 gap-2">
                             <div>
@@ -444,6 +457,17 @@ async function handlePayment(payableId, projectName, nominal, description, ppnPe
             const finance = (n) => new Intl.NumberFormat("id-ID").format(parseFloat(n) || 0);
             const unfinance = (s) => parseFloat(s.toString().replace(/\./g, '').replace(/,/g, '.')) || 0;
 
+           window.updatePaymentNumber = async (date) => {
+                try {
+                    const res = await fetch(`${baseUrl}/generate/payment_number`, { 
+                        method: "POST", 
+                        headers: { "Authorization": `Bearer ${API_TOKEN}`, "Content-Type": "application/json" }, 
+                        body: JSON.stringify({ payment_date: date }) 
+                    });
+                    const data = await res.json();
+                    if (data?.data?.success) document.getElementById("payment_number").value = data.data.payment_number;
+                } catch(e) {}
+            };
             window.calculateTotals = () => {
                 const nominalAsing = unfinance(document.getElementById('input_nominal_display').value);
                 const rateValue = parseFloat(document.getElementById('rate').value) || 1;
@@ -482,6 +506,7 @@ async function handlePayment(payableId, projectName, nominal, description, ppnPe
 
             // Jalankan kalkulasi pertama kali
             calculateTotals();
+            updatePaymentNumber(formattedDate);
         },
         preConfirm: async () => {
             const unfinance = (id) => {
