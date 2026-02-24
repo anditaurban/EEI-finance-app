@@ -18,7 +18,7 @@ document.getElementById('logout').addEventListener('click', function () {
         showConfirmButton: false,
         timer: 1200
       }).then(() => {
-        window.location.href = 'login';
+        window.location.href = 'login.html';
       });
     }
   });
