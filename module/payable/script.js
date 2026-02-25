@@ -365,7 +365,15 @@ async function handlePayment(payableId, projectName, nominal, description, ppnPe
     }
 
     // Format Tanggal untuk Input HTML (YYYY-MM-DD)
-    let formattedDate = new Date().toISOString().split('T')[0];
+    // Mendapatkan tanggal saat ini di zona waktu Jakarta (WIB)
+    const now = new Date();
+    const jakartaDate = new Date(now.toLocaleString("en-US", {timeZone: "Asia/Jakarta"}));
+    const yyyy = jakartaDate.getFullYear();
+    const mm = String(jakartaDate.getMonth() + 1).padStart(2, '0');
+    const dd = String(jakartaDate.getDate()).padStart(2, '0');
+    let formattedDate = `${yyyy}-${mm}-${dd}`;
+
+    // Jika dalam mode edit, gunakan tanggal dari data yang sudah ada
     if (existingData?.payment_date) {
         const parts = existingData.payment_date.split('/');
         if (parts.length === 3) formattedDate = `${parts[2]}-${parts[1]}-${parts[0]}`;
@@ -388,7 +396,7 @@ async function handlePayment(payableId, projectName, nominal, description, ppnPe
                         </div>
                         <div>
                             <label class="block font-semibold mb-1 text-xs text-gray-500 uppercase">Tanggal</label>
-                            <input type="date" id="payment_date" class="w-full px-3 py-2 border rounded" value="${new Date().toISOString().split('T')[0]}" onchange="updatePaymentNumber(this.value)">
+                            <input type="date" id="payment_date" class="w-full px-3 py-2 border rounded" value="${formattedDate}" onchange="updatePaymentNumber(this.value)">
                         </div>
                         <div class="grid grid-cols-2 gap-2">
                             <div>

@@ -343,6 +343,14 @@ async function handlePayment(receivableId, projectName, nominal) {
         return;
     }
 
+    const now = new Date();
+    const jakartaDate = new Date(now.toLocaleString("en-US", {timeZone: "Asia/Jakarta"}));
+    const yyyy = jakartaDate.getFullYear();
+    const mm = String(jakartaDate.getMonth() + 1).padStart(2, '0');
+    const dd = String(jakartaDate.getDate()).padStart(2, '0');
+    let formattedDate = `${yyyy}-${mm}-${dd}`;
+
+
     const formHtml = `
         <form id="swal-payment-form" class="text-left text-sm text-gray-700">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -352,12 +360,12 @@ async function handlePayment(receivableId, projectName, nominal) {
                         <select id="coa_bank" class="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500">${bankOptions}</select>
                     </div>
                     <div>
-                        <label class="block font-semibold mb-1 text-xs text-gray-500 uppercase">No. Pembayaran</label>
+                        <label class="block font-semibold mb-1 text-xs text-gray-500 uppercase">No. Kwitansi</label>
                         <input type="text" id="receipt_number" class="w-full px-3 py-2 border rounded bg-gray-50 font-mono" readonly>
                     </div>
                     <div>
                         <label class="block font-semibold mb-1 text-xs text-gray-500 uppercase">Tanggal</label>
-                        <input type="date" id="receipt_date" class="w-full px-3 py-2 border rounded" value="${new Date().toISOString().split('T')[0]}" onchange="updateReceiptNumber(this.value)">
+                        <input type="date" id="receipt_date" class="w-full px-3 py-2 border rounded" value="${formattedDate}" onchange="updateReceiptNumber(this.value)">
                     </div>
                     <div class="grid grid-cols-2 gap-2">
                         <div>
@@ -494,21 +502,8 @@ async function handlePayment(receivableId, projectName, nominal) {
                         body: JSON.stringify({ receipt_date: date }) 
                     });
                     const data = await res.json();
-                    
-                    console.log("Response API Kwitansi:", data); // Lihat di console F12
-
-                    // Cek apakah strukturnya benar data.data.receipt_number
-                    if (data && data.data && data.data.receipt_number) {
-                        document.getElementById("receipt_number").value = data.data.receipt_number;
-                    } else if (data.receipt_number) {
-                        // Jika ternyata strukturnya langsung data.receipt_number
-                        document.getElementById("receipt_number").value = data.receipt_number;
-                    } else {
-                        console.error("Struktur data kwitansi tidak sesuai!");
-                    }
-                } catch(e) {
-                    console.error("Gagal fetch nomor kwitansi:", e);
-                }
+                    if (data?.data?.success) document.getElementById("receipt_number").value = data.data.receipt_number;
+                } catch(e) {}
             };
 
             // Set format awal nominal saat modal dibuka

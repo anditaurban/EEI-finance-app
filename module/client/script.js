@@ -67,7 +67,7 @@ async function openLinkCOAModal(clientId, coacode = null, currentCoaId = null) {
     confirmButtonText: "Simpan",
     cancelButtonText: "Batal",
     focusConfirm: false,
- customClass: {
+    customClass: {
       popup: "rounded-2xl px-6 py-5",
       title: "text-2xl font-bold text-gray-800 mb-6",
       confirmButton:
@@ -202,64 +202,6 @@ document.getElementById("addButton").addEventListener("click", () => {
   loadDropdownCall();
 });
 
-async function fillFormData(data) {
-  console.log("Fill Form Data:", data[0]);
-
-  // Helper untuk menunggu <option> tersedia di select
-  async function waitForOption(selectId, expectedValue, timeout = 3000) {
-    return new Promise((resolve) => {
-      const interval = 100;
-      let waited = 0;
-
-      const check = () => {
-        const select = document.getElementById(selectId);
-        if (!select) return resolve();
-        const exists = Array.from(select.options).some(
-          (opt) => opt.value == expectedValue,
-        );
-        if (exists || waited >= timeout) {
-          resolve();
-        } else {
-          waited += interval;
-          setTimeout(check, interval);
-        }
-      };
-
-      check();
-    });
-  }
-  // Hidden field
-  document.getElementById("owner_id").value = data[0].owner_id || "";
-  document.getElementById("expired_date").value = "0000-00-00";
-  document.getElementById("webshop").value = data.webshop || "YES";
-
-  // Text input
-  document.getElementById("productcode").value = data[0].productcode;
-  document.getElementById("product").value = data[0].product;
-  document.getElementById("description").value = data[0].description;
-  document.getElementById("purchase_price").value = data[0].purchase_price;
-  document.getElementById("price").value = data[0].price;
-
-  // Tunggu option category & unit
-  await waitForOption("category_id", data[0].category_id);
-  await waitForOption("unit_id", data[0].unit_id);
-  await waitForOption("brand_id", data[0].brand_id);
-
-  // Set select value
-  const categorySelect = document.getElementById("category_id");
-  const unitSelect = document.getElementById("unit_id");
-  const brandSelect = document.getElementById("brand_id");
-  if (categorySelect) categorySelect.value = data[0].category_id || "";
-  if (unitSelect) unitSelect.value = data[0].unit_id || "";
-  if (brandSelect) brandSelect.value = data[0].brand_id || "";
-
-  // File (hanya tampilkan nama file di file_text jika ada)
-  if (data[0].picture) {
-    document.getElementById("file_text").value = data[0].picture;
-  } else {
-    document.getElementById("file_text").value = "";
-  }
-}
 
 async function loadDropdown(selectId, apiUrl, valueField, labelField) {
   console.log(selectId, apiUrl, valueField, labelField);
@@ -319,11 +261,7 @@ function loadDropdownCall() {
 }
 
 formHtml = `
-<form id="dataformfile"
-      enctype="multipart/form-data"
-      autocomplete="off"
-      spellcheck="false"
-      class="space-y-5">
+<form id="dataform" class="space-y-5">
 
   <!-- Hidden Owner ID -->
   <input type="hidden" name="owner_id" id="owner_id" value="${owner_id}">
@@ -415,3 +353,54 @@ formHtml = `
 
 </form>
 `;
+async function fillFormData(data) {
+  // Karena data endpoint yang kamu berikan berbentuk objek tunggal (bukan array), 
+  // kita handle agar bisa menerima data[0] atau data itu sendiri.
+  const item = Array.isArray(data) ? data[0] : data;
+  
+  console.log("Filling Form with Data:", item);
+
+  // 1. Hidden & Field Dasar
+  const ownerIdEl = document.getElementById("owner_id");
+  if (ownerIdEl) ownerIdEl.value = item.owner_id || "";
+
+  // 2. Text Inputs (Sesuai ID di formHtml)
+  const fields = [
+    "nama", 
+    "alias", 
+    "email", 
+    "phone", 
+    "whatsapp", 
+    "website", 
+    "city_name", 
+    "no_npwp"
+  ];
+
+  fields.forEach(field => {
+    const el = document.getElementById(field);
+    if (el) {
+      el.value = item[field] || "";
+    }
+  });
+
+  // 3. Textarea (Alamat)
+  const alamatEl = document.getElementById("alamat");
+  if (alamatEl) {
+    alamatEl.value = item.alamat || "";
+  }
+}
+
+function validateFormData(formData, requiredFields = []) {
+  console.log("✅ Validasi Form dimulai...");
+
+  for (const { field, message } of requiredFields) {
+    if (!formData[field] || formData[field].trim() === "") {
+      console.warn(`⚠️ Field kosong: ${field}`);
+      alert(message); // bisa diganti SweetAlert kalau mau lebih cantik
+      return false;
+    }
+  }
+
+  console.log("✅ Semua field terisi");
+  return true;
+}
