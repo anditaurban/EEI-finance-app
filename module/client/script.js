@@ -3,15 +3,51 @@ colSpanCount = 9;
 setDataType("client");
 fetchAndUpdateData();
 
+ formatRupiah = (angka) => {
+  return new Intl.NumberFormat("id-ID", {
+    style: "currency",
+    currency: "IDR",
+    minimumFractionDigits: 0
+  }).format(angka || 0);
+};
+
+// --- TAMBAHAN: Fungsi untuk merender object "summary" ke HTML ---
+window.updateSummaryUI = function(summary) {
+  if(!summary) return;
+  
+  // Update Element Total Client
+  document.getElementById('summary_total_clients').innerText = summary.total_client || 0;
+  
+  // Update Element New Client
+  document.getElementById('summary_new_clients').innerHTML = `
+      <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
+      +${summary.new_client_this_month || 0} this month
+  `;
+
+  // Update Element Active Project
+  document.getElementById('summary_active_projects').innerText = summary.active_project || 0;
+  
+  // Update Element Unpaid Invoices
+  document.getElementById('summary_pending_amount').innerText = formatRupiah(summary.unpaid_invoices);
+  
+  // Update Element Top Client
+  document.getElementById('summary_top_client').innerText = summary.top_client || '-';
+  document.getElementById('summary_top_client_revenue').innerText = `Total Revenue: ${formatRupiah(summary.total_revenue_top_client)}`;
+};
+
 window.rowTemplate = function (item) {
+  // Asumsi JSON backend untuk tabel klien mengirimkan "total_revenue" dan "active_projects" di masing-masing item
+  const clientRevenue = formatRupiah(item.total_revenue || 0);
+  const clientActiveProjects = item.active_projects || 0;
+
   return `
     <tr class="hover:bg-gray-50 transition">
       
       <td class="px-6 py-4">
-        <div class="font-bold text-gray-900">${item.nama}</div>
-        <div class="text-xs text-gray-500">Code: CL-${item.pelanggan_id}</div>
-        <div class="text-xs text-gray-500">COA: ${item.coa_code}</div>
-        <div class="text-xs text-gray-500">${item.coa_name}</div>
+        <div class="font-bold text-gray-900">${item.nama || "-"}</div>
+        <div class="text-xs text-gray-500">Code: CL-${item.pelanggan_id || "-"}</div>
+        <div class="text-xs text-gray-500">COA: ${item.coa_code || "-"}</div>
+        <div class="text-xs text-gray-500">${item.coa_name || "-"}</div>
       </td>
 
       <td class="px-6 py-4">
@@ -23,10 +59,10 @@ window.rowTemplate = function (item) {
 
       <td class="px-6 py-4">
         <div class="flex flex-col gap-2">
-          <span class="inline-flex px-2.5 py-1 text-xs font-medium bg-gray-100 text-gray-700 border rounded">
+          <span class="inline-flex px-2.5 py-1 text-xs font-medium bg-gray-100 text-gray-700 border rounded w-max">
             Retail
           </span>
-          <span class="inline-flex items-center gap-1.5 px-2 py-0.5 text-xs text-gray-600 bg-gray-50 border rounded">
+          <span class="inline-flex items-center gap-1.5 px-2 py-0.5 text-xs text-gray-600 bg-gray-50 border rounded w-max">
             <span class="w-1.5 h-1.5 rounded-full bg-gray-400"></span>
             Inactive
           </span>
@@ -34,8 +70,8 @@ window.rowTemplate = function (item) {
       </td>
 
       <td class="px-6 py-4 text-right">
-        <div class="font-mono font-medium text-gray-900">Rp 15.000.000</div>
-        <div class="text-xs text-gray-400">0 Active Projects</div>
+        <div class="font-mono font-medium text-gray-900"> ${finance(item.total_revenue)}</div>
+        <div class="text-xs text-gray-400">${item.active_project} Active Projects</div>
       </td>
 
       <td class="px-6 py-4 text-center">

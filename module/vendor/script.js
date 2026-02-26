@@ -3,15 +3,45 @@ colSpanCount = 9;
 setDataType("vendor");
 fetchAndUpdateData();
 
+
+formatRupiah = (angka) => {
+  return new Intl.NumberFormat("id-ID", {
+    style: "currency",
+    currency: "IDR",
+    minimumFractionDigits: 0
+  }).format(angka || 0);
+};
+window.updateSummaryUI = function(summary) {
+  if(!summary) return;
+  
+  // Sesuai dengan key JSON dari Postman Vendor
+  document.getElementById('summary_total_vendors').innerText = summary.total_vendor || 0;
+  
+  const activeVendorsEl = document.getElementById('summary_active_vendors');
+  if(activeVendorsEl) {
+    activeVendorsEl.innerText = `${summary.active_vendor || 0} Active`;
+  }
+  
+  document.getElementById('summary_payable_balance').innerText = formatRupiah(summary.outstanding_balance);
+  document.getElementById('summary_overdue_bills').innerText = formatRupiah(summary.overdue_bills);
+  document.getElementById('summary_active_po').innerText = summary.active_po || 0;
+};
+
+
+// --- REVISI: window.rowTemplate ---
 window.rowTemplate = function (item) {
+  // Mengambil data sesuai key di Postman (total_revenue dan active_project)
+  const vendorRevenue = formatRupiah(item.total_revenue || 0);
+  const vendorActiveProjects = item.active_project || 0;
+
   return `
     <tr class="hover:bg-gray-50 transition">
       
       <td class="px-6 py-4">
-        <div class="font-bold text-gray-900">${item.nama}</div>
-        <div class="text-xs text-gray-500">Code: CL-${item.vendor_id}</div>
-        <div class="text-xs text-gray-500">COA: ${item.coa_code}</div>
-        <div class="text-xs text-gray-500">${item.coa_name}</div>
+        <div class="font-bold text-gray-900">${item.nama || "-"}</div>
+        <div class="text-xs text-gray-500">Code: VN-${item.vendor_id || "-"}</div>
+        <div class="text-xs text-gray-500">COA: ${item.coa_code || "-"}</div>
+        <div class="text-xs text-gray-500">${item.coa_name || "-"}</div>
       </td>
 
       <td class="px-6 py-4">
@@ -23,10 +53,10 @@ window.rowTemplate = function (item) {
 
       <td class="px-6 py-4">
         <div class="flex flex-col gap-2">
-          <span class="inline-flex px-2.5 py-1 text-xs font-medium bg-gray-100 text-gray-700 border rounded">
+          <span class="inline-flex px-2.5 py-1 text-xs font-medium bg-gray-100 text-gray-700 border rounded w-max">
             Retail
           </span>
-          <span class="inline-flex items-center gap-1.5 px-2 py-0.5 text-xs text-gray-600 bg-gray-50 border rounded">
+          <span class="inline-flex items-center gap-1.5 px-2 py-0.5 text-xs text-gray-600 bg-gray-50 border rounded w-max">
             <span class="w-1.5 h-1.5 rounded-full bg-gray-400"></span>
             Inactive
           </span>
@@ -34,14 +64,14 @@ window.rowTemplate = function (item) {
       </td>
 
       <td class="px-6 py-4 text-right">
-        <div class="font-mono font-medium text-gray-900">Rp 15.000.000</div>
-        <div class="text-xs text-gray-400">0 Active Projects</div>
+        <div class="font-mono font-medium text-gray-900">${finance(item.total_revenue)}</div>
+        <div class="text-xs text-gray-400">${item.active_project} Active Projects</div>
       </td>
 
       <td class="px-6 py-4 text-center">
         <div class="flex justify-center gap-2">
           <button onclick="event.stopPropagation(); handleEdit(${item.vendor_id}, '${item.nama}')"
-            class="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition" title="Edit Client">
+            class="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition" title="Edit Vendor">
             ✏️
           </button>
           <button onclick="openLinkCOAModal(${item.vendor_id}, '${item.coa_code}', '${item.coa_id}')"
@@ -49,7 +79,7 @@ window.rowTemplate = function (item) {
             🔗
           </button>
           <button onclick="event.stopPropagation(); handleDelete(${item.vendor_id}, '${item.nama}')"
-            class="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition" title="Delete Client">
+            class="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition" title="Delete Vendor">
             🗑️
           </button>
         </div>

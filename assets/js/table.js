@@ -57,14 +57,26 @@ async function fetchAndUpdateData(id = null, filter = '') {
 
     try {
         const response = await fetchData(currentDataType, state[currentDataType].currentPage, id, filter);
+        
+        // 1. CEK ISI RESPONSE ASLI DARI API
+        console.log("🔍 CEK RESPONSE:", response);
+
         if (!response || !response.tableData) throw new Error('Invalid response from the API');
 
         dataItems = response.tableData;
-        dataSummary = response.summaryData;
+        dataSummary = response.summary; 
+        
+        // 2. CEK APAKAH SUMMARY TERBACA
+        console.log("📊 CEK SUMMARY:", dataSummary); 
+
         updateState(response);
 
         if (dataSummary) {
-          loadSummary(dataSummary);
+            // 3. CEK APAKAH MASUK KE BLOK INI
+            console.log("✅ Fungsi updateSummaryUI dipanggil!");
+            updateSummaryUI(dataSummary);
+        } else {
+            console.warn("⚠️ dataSummary kosong atau undefined!");
         }
 
         setTimeout(() => {
@@ -72,6 +84,7 @@ async function fetchAndUpdateData(id = null, filter = '') {
             updatePagination(); 
         }, 500);
     } catch (error) {
+        console.error("Error fetching data:", error);
         showErrorLoadingData(document.querySelector(`#${tableBodyId}`));
     }
 }
