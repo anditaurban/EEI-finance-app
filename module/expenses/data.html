@@ -255,42 +255,39 @@
         </div>
 
         <div id="coaView" class="accounting-view hidden animate-fade-in">
-           <div class="flex justify-between items-center mb-6">
-              <div>
-                 <h2 class="text-lg font-bold text-gray-800">Chart of Accounts (COA)</h2>
-                 <p class="text-xs text-gray-500">Master data akun akuntansi.</p>
-              </div>
-           </div>
-
-           <div class="flex items-center gap-3">
-        <button id="addButton" class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-5 py-2.5 rounded-lg shadow-sm hover:shadow-md transition-all flex items-center gap-2">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-          New Invoice
-        </button>
-      </div>
-
-           <div class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
-               <div class="overflow-x-auto">
-                   <table class="min-w-full text-sm text-left">
-                     <thead class="bg-gray-50 border-b border-gray-200 text-xs uppercase text-gray-500 font-semibold">
-                       <tr>
-                         <th class="px-6 py-3 w-32">Kode</th>
-                         <th class="px-6 py-3">Nama Akun</th>
-                         <th class="px-6 py-3 w-40">Tipe</th>
-                         <th class="px-6 py-3 w-32">Kategori</th>
-                         <th class="px-6 py-3 text-right">Saldo</th>
-                         <th class="px-6 py-3 text-center w-16">Action</th>
-                       </tr>
-                     </thead>
-                     <tbody id="COAtableBody" class="divide-y divide-gray-100 bg-white"></tbody>
-                   </table>
-                   
-                   <div id="pagination" class="bg-gray-50 border-t border-gray-200 p-4"></div>
-               </div>
-           </div>
+   
+    <div class="flex justify-between items-center mb-6">
+        <div>
+            <h2 class="text-lg font-bold text-gray-800">Chart of Accounts (COA)</h2>
+            <p class="text-xs text-gray-500">Master data akun akuntansi.</p>
         </div>
 
-      </div> </div> </div>
+        <button onclick="openCOAForm()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium shadow-sm transition flex items-center gap-2">
+            Tambah COA
+        </button>
+    </div>
+
+    <div class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="min-w-full text-sm text-left">
+                <thead class="bg-gray-50 border-b border-gray-200 text-xs uppercase text-gray-500 font-semibold">
+                    <tr>
+                        <th class="px-6 py-3 w-32">Kode</th>
+                        <th class="px-6 py-3">Nama Akun</th>
+                        <th class="px-6 py-3 w-40">Tipe</th>
+                        <th class="px-6 py-3 w-32">Kategori</th>
+                        <th class="px-6 py-3 text-right">Saldo</th>
+                        <th class="px-6 py-3 text-center w-16">Action</th>
+                    </tr>
+                </thead>
+                <tbody id="COAtableBody" class="divide-y divide-gray-100 bg-white"></tbody>
+            </table>
+            
+            <div id="pagination" class="bg-gray-50 border-t border-gray-200 p-4"></div>
+        </div>
+    </div>
+
+</div>  
 
   <div id="coaRowMenu" class="hidden fixed w-40 bg-white border border-gray-200 rounded-lg shadow-xl z-50 py-1 animate-fade-in-down">
      <button id="coaEditBtn" class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-blue-600 transition flex items-center gap-2">

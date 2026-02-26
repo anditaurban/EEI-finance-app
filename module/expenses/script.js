@@ -826,16 +826,23 @@ async function generateCOACodeByParent(parentId) {
     }
 
     const res = await apiGet(url);
+    
+    // Debugging: Cek struktur asli dari response API di console
+    console.log('Response dari /next-code:', res);
 
-    if (!res?.next_code) {
+    // Cek beberapa kemungkinan letak 'next_code' dari response API
+    const nextCode = res?.next_code || res?.data?.next_code || res?.data;
+
+    if (!nextCode) {
       throw new Error('Next COA code not returned');
     }
 
-    codeInput.value = res.next_code;
+    codeInput.value = nextCode;
 
   } catch (err) {
     console.error('generateCOACodeByParent error:', err);
     codeInput.value = '';
+    
     Swal.fire(
       'Error',
       'Gagal menghasilkan kode COA. Silakan coba lagi.',
@@ -907,7 +914,6 @@ function formatAccountType(type) {
   };
   return map[type] || type;
 }
-
 
 
 
